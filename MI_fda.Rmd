@@ -26,7 +26,7 @@ theme_set(theme_bw() + theme(legend.position = "bottom"))
 
 ## Slide Deck
 
-<iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/19588e79e83146a8bc844ed2f335c79e" title="MI_intro" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586"></iframe>
+<iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/3710e7390c4842afb3f85c22e729ecde" title="MI_fda" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586"></iframe>
 
 ## Overview
 
@@ -324,4 +324,146 @@ Some caveats about this analysis:
   * Or, using something like the G function which is more robust to rare cells and fewer subjects would be lost.
 
 ## Functional data analysis
+
+Functional data analysis allows you to leverage information from the full spatial summary function (e.g. K-function) rather than picking a specific radius *r*, which can be an arbitrary choice.
+
+The general workflow is:
+
+1. Select a spatial summary function (e.g. bivariate Ripley's K).
+2. Evaluate spatial summary function for the cell(s) of choice over a range of biologically meaningful radii. This will result in one spatial summary function for each image.
+3. Visualize the functions
+5. Select a patient-level outcome of interest (e.g. survival)
+6. Choose a functional data model (functional principal components analysis or functional regression)
+
+I will use the ovarian immune cell clustering analysis above as a starting point, and use  a functional principal components analysis approach. Resources for functional regression are provided in the "references" section below. Here I am interested in the relationship between patient survival and the clustering of immune cells within the tumor areas in the ovarian cancer dataset. I will calculate a univariate L function for  immune cells. 
+
+
+#### Estimating the spatial summary functions
+
+
+I can use the same `extract_univariate` function I defined above to compute the L function at several radii across subjects. This is performed below:
+
+```{r}
+df_nest = ovarian_df %>%
+  # subset to tumor areas
+  filter(tissue_category == "Tumor") %>%
+  mutate(id = sample_id) %>%
+  dplyr::select(sample_id, x, y, immune, id) %>%
+  nest(data = c(sample_id, x, y, immune))
+
+# we are evaluating L at 100 different radii, so this will take some time to compute
+L_fda_df = map_dfr(df_nest$data, extract_univariate, 
+               marksvar = "immune", mark1 = "immune",
+               r_vec = seq(0, 200, length.out = 100))
+
+head(L_fda_df)
+```
+
+Let's visualize the L functions across subjects using a spaghetti plot.
+
+```{r spaghetti, fig.width = 11}
+Lp = L_fda_df %>%
+  ggplot(aes(r, L, group = subject_id)) +
+  geom_line(alpha = 0.4) +
+  geom_line(data = filter(L_fda_df, subject_id == 68), aes(y = csr), color = "red3",
+            linetype = 2) +
+  ggtitle("L(r)")
+
+
+Lp2 = L_fda_df %>%
+  ggplot(aes(r, Ldiff, group = subject_id)) +
+  geom_line(alpha = 0.4) +
+  geom_hline(yintercept = 0, color = "red3", linetype = 2) +
+  ggtitle("L(r)-r")
+
+Lp + Lp2
+```
+
+#### Functional principal components analysis
+
+FPCA can be performed for dimension reduction, then functional principal component scores can be used as covariates in a traditional regression model. I run fpca using the `fpca.face()` function from the `refund` package.
+
+```{r}
+# convert Ldiff functions from  long to wide format for use in refund
+Lmat = L_fda_df %>% 
+  dplyr::select(subject_id, r, Ldiff) %>%
+  pivot_wider(names_from = r, 
+              names_glue = "r_{round(r, 2)}",
+              values_from = Ldiff) %>%
+  arrange(subject_id) %>%
+  dplyr::select(-subject_id) %>%
+  as.matrix()
+
+# run fpca
+set.seed(133)
+L_fpc = fpca.sc(Y = Lmat, pve = .99)
+
+# if you have a large dataset, instead use fpca.face:
+# L_fpc = fpca.face(Y = Lmat, pve = .99, knots = 50)
+```
+
+We can interactively visualize the results of the fpca using the  `plot_shiny` function from the `refund.shiny` package. Note that you can't knit this in an .Rmd file, which is why it is commented out in the code below.
+
+```{r, eval = FALSE}
+library(refund.shiny)
+plot_shiny(L_fpc)
+```
+
+
+We'll use the first 2 principal components since they explain 99% of the variance in the data. The scores from these 2 PCs will be used as covariates in a proportional hazards model.
+
+* PC 1 interpretation: negative scores indicate high L values across all radii
+* PC 2 interpretation: negative scores indicate L function is higher at small radii then gets lower, where high scores indicate L is steadily increasing over r
+
+
+To use these as covariates we need to merge them with the clinical data. Let's also multiple PC1 by -1 so it has the interpretation that higher PC1 score indicates higher values for the L function.
+
+```{r}
+score_df = tibble(sample_id = 1:128,
+                     fpc1 = L_fpc$scores[,1] * -1,
+                     fpc2 = L_fpc$scores[,2])
+
+surv_fpca_df = ovarian_df %>%
+  dplyr::select(sample_id, survival_time, death, age = age_at_diagnosis) %>%
+  # delete duplicates- should only have one row per subject
+  distinct() %>%
+  # remove subject with outlying survival time
+  filter(survival_time < 200) %>%
+  # merge with L function data
+  left_join(., score_df, by = "sample_id")
+
+```
+
+
+Let's do some exploratory analysis first.
+
+```{r}
+p1 = surv_fpca_df %>%
+  ggplot(aes(fpc1, survival_time, color = factor(death))) +
+  geom_point() + ggtitle("fpc1")
+
+p2 = surv_fpca_df %>%
+  ggplot(aes(fpc2, survival_time, color = factor(death))) +
+  geom_point() + ggtitle("fpc2")
+
+p1 + p2
+```
+
+
+Finally, we'll model survival as the outcome with fpc scores as covariates.
+
+
+```{r}
+phmod_fpca = coxph(Surv(survival_time, death) ~ fpc1 + fpc2 + age, 
+              data = surv_fpca_df)
+summary(phmod_fpca)
+```
+
+
 ## References
+
+
+* [interactive visualization of functional data with refund.shiny](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4864857/)
+* [a paper using a cox model with FPC scores for multiplex imaging data](https://www.biorxiv.org/content/10.1101/2022.06.17.496475v1.full.pdf)
+* [functional Cox regression with multiplex imaging data](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009486)
+* [additive functional Cox regression](https://pubmed.ncbi.nlm.nih.gov/34898969/)

@@ -377,7 +377,7 @@ div.tocify {
 
 <div id="slide-deck" class="section level2">
 <h2>Slide Deck</h2>
-<iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/19588e79e83146a8bc844ed2f335c79e" title="MI_intro" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586">
+<iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/3710e7390c4842afb3f85c22e729ecde" title="MI_fda" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586">
 </iframe>
 </div>
 <div id="overview" class="section level2">
@@ -746,9 +746,188 @@ cells and fewer subjects would be lost.</li>
 </div>
 <div id="functional-data-analysis" class="section level2">
 <h2>Functional data analysis</h2>
+<p>Functional data analysis allows you to leverage information from the
+full spatial summary function (e.g. K-function) rather than picking a
+specific radius <em>r</em>, which can be an arbitrary choice.</p>
+<p>The general workflow is:</p>
+<ol style="list-style-type: decimal">
+<li>Select a spatial summary function (e.g. bivariate Ripley’s K).</li>
+<li>Evaluate spatial summary function for the cell(s) of choice over a
+range of biologically meaningful radii. This will result in one spatial
+summary function for each image.</li>
+<li>Visualize the functions</li>
+<li>Select a patient-level outcome of interest (e.g. survival)</li>
+<li>Choose a functional data model (functional principal components
+analysis or functional regression)</li>
+</ol>
+<p>I will use the ovarian immune cell clustering analysis above as a
+starting point, and use a functional principal components analysis
+approach. Resources for functional regression are provided in the
+“references” section below. Here I am interested in the relationship
+between patient survival and the clustering of immune cells within the
+tumor areas in the ovarian cancer dataset. I will calculate a univariate
+L function for immune cells.</p>
+<div id="estimating-the-spatial-summary-functions"
+class="section level4">
+<h4>Estimating the spatial summary functions</h4>
+<p>I can use the same <code>extract_univariate</code> function I defined
+above to compute the L function at several radii across subjects. This
+is performed below:</p>
+<pre class="r"><code>df_nest = ovarian_df %&gt;%
+  # subset to tumor areas
+  filter(tissue_category == &quot;Tumor&quot;) %&gt;%
+  mutate(id = sample_id) %&gt;%
+  dplyr::select(sample_id, x, y, immune, id) %&gt;%
+  nest(data = c(sample_id, x, y, immune))
+
+# we are evaluating L at 100 different radii, so this will take some time to compute
+L_fda_df = map_dfr(df_nest$data, extract_univariate, 
+               marksvar = &quot;immune&quot;, mark1 = &quot;immune&quot;,
+               r_vec = seq(0, 200, length.out = 100))
+## Warning: data contain duplicated points
+## Warning: 1 point was rejected as lying outside the specified window
+## Warning: data contain duplicated points
+## Warning: 1 point was rejected as lying outside the specified window
+
+head(L_fda_df)
+## # A tibble: 6 × 5
+##   subject_id     r     L   csr Ldiff
+##        &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1         68  0      0    0     0   
+## 2         68  2.02   0    2.02 -2.02
+## 3         68  4.04  19.3  4.04 15.2 
+## 4         68  6.06  24.7  6.06 18.6 
+## 5         68  8.08  31.3  8.08 23.2 
+## 6         68 10.1   35.4 10.1  25.3</code></pre>
+<p>Let’s visualize the L functions across subjects using a spaghetti
+plot.</p>
+<pre class="r"><code>Lp = L_fda_df %&gt;%
+  ggplot(aes(r, L, group = subject_id)) +
+  geom_line(alpha = 0.4) +
+  geom_line(data = filter(L_fda_df, subject_id == 68), aes(y = csr), color = &quot;red3&quot;,
+            linetype = 2) +
+  ggtitle(&quot;L(r)&quot;)
+
+
+Lp2 = L_fda_df %&gt;%
+  ggplot(aes(r, Ldiff, group = subject_id)) +
+  geom_line(alpha = 0.4) +
+  geom_hline(yintercept = 0, color = &quot;red3&quot;, linetype = 2) +
+  ggtitle(&quot;L(r)-r&quot;)
+
+Lp + Lp2</code></pre>
+<p><img src="MI_fda_files/figure-html/spaghetti-1.png" width="90%" /></p>
+</div>
+<div id="functional-principal-components-analysis"
+class="section level4">
+<h4>Functional principal components analysis</h4>
+<p>FPCA can be performed for dimension reduction, then functional
+principal component scores can be used as covariates in a traditional
+regression model. I run fpca using the <code>fpca.face()</code> function
+from the <code>refund</code> package.</p>
+<pre class="r"><code># convert Ldiff functions from  long to wide format for use in refund
+Lmat = L_fda_df %&gt;% 
+  dplyr::select(subject_id, r, Ldiff) %&gt;%
+  pivot_wider(names_from = r, 
+              names_glue = &quot;r_{round(r, 2)}&quot;,
+              values_from = Ldiff) %&gt;%
+  arrange(subject_id) %&gt;%
+  dplyr::select(-subject_id) %&gt;%
+  as.matrix()
+
+# run fpca
+set.seed(133)
+L_fpc = fpca.sc(Y = Lmat, pve = .99)
+
+# if you have a large dataset, instead use fpca.face:
+# L_fpc = fpca.face(Y = Lmat, pve = .99, knots = 50)</code></pre>
+<p>We can interactively visualize the results of the fpca using the
+<code>plot_shiny</code> function from the <code>refund.shiny</code>
+package. Note that you can’t knit this in an .Rmd file, which is why it
+is commented out in the code below.</p>
+<pre class="r"><code>library(refund.shiny)
+plot_shiny(L_fpc)</code></pre>
+<p>We’ll use the first 2 principal components since they explain 99% of
+the variance in the data. The scores from these 2 PCs will be used as
+covariates in a proportional hazards model.</p>
+<ul>
+<li>PC 1 interpretation: negative scores indicate high L values across
+all radii</li>
+<li>PC 2 interpretation: negative scores indicate L function is higher
+at small radii then gets lower, where high scores indicate L is steadily
+increasing over r</li>
+</ul>
+<p>To use these as covariates we need to merge them with the clinical
+data. Let’s also multiple PC1 by -1 so it has the interpretation that
+higher PC1 score indicates higher values for the L function.</p>
+<pre class="r"><code>score_df = tibble(sample_id = 1:128,
+                     fpc1 = L_fpc$scores[,1] * -1,
+                     fpc2 = L_fpc$scores[,2])
+
+surv_fpca_df = ovarian_df %&gt;%
+  dplyr::select(sample_id, survival_time, death, age = age_at_diagnosis) %&gt;%
+  # delete duplicates- should only have one row per subject
+  distinct() %&gt;%
+  # remove subject with outlying survival time
+  filter(survival_time &lt; 200) %&gt;%
+  # merge with L function data
+  left_join(., score_df, by = &quot;sample_id&quot;)</code></pre>
+<p>Let’s do some exploratory analysis first.</p>
+<pre class="r"><code>p1 = surv_fpca_df %&gt;%
+  ggplot(aes(fpc1, survival_time, color = factor(death))) +
+  geom_point() + ggtitle(&quot;fpc1&quot;)
+
+p2 = surv_fpca_df %&gt;%
+  ggplot(aes(fpc2, survival_time, color = factor(death))) +
+  geom_point() + ggtitle(&quot;fpc2&quot;)
+
+p1 + p2</code></pre>
+<p><img src="MI_fda_files/figure-html/unnamed-chunk-21-1.png" width="90%" /></p>
+<p>Finally, we’ll model survival as the outcome with fpc scores as
+covariates.</p>
+<pre class="r"><code>phmod_fpca = coxph(Surv(survival_time, death) ~ fpc1 + fpc2 + age, 
+              data = surv_fpca_df)
+summary(phmod_fpca)
+## Call:
+## coxph(formula = Surv(survival_time, death) ~ fpc1 + fpc2 + age, 
+##     data = surv_fpca_df)
+## 
+##   n= 127, number of events= 80 
+## 
+##           coef exp(coef)  se(coef)      z Pr(&gt;|z|)   
+## fpc1  0.007829  1.007859  0.002526  3.099  0.00194 **
+## fpc2 -0.003667  0.996340  0.012310 -0.298  0.76579   
+## age   0.014329  1.014432  0.011390  1.258  0.20836   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##      exp(coef) exp(-coef) lower .95 upper .95
+## fpc1    1.0079     0.9922    1.0029     1.013
+## fpc2    0.9963     1.0037    0.9726     1.021
+## age     1.0144     0.9858    0.9920     1.037
+## 
+## Concordance= 0.626  (se = 0.034 )
+## Likelihood ratio test= 13.75  on 3 df,   p=0.003
+## Wald test            = 17.69  on 3 df,   p=5e-04
+## Score (logrank) test = 18.08  on 3 df,   p=4e-04</code></pre>
+</div>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>
+<ul>
+<li><a
+href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4864857/">interactive
+visualization of functional data with refund.shiny</a></li>
+<li><a
+href="https://www.biorxiv.org/content/10.1101/2022.06.17.496475v1.full.pdf">a
+paper using a cox model with FPC scores for multiplex imaging
+data</a></li>
+<li><a
+href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009486">functional
+Cox regression with multiplex imaging data</a></li>
+<li><a href="https://pubmed.ncbi.nlm.nih.gov/34898969/">additive
+functional Cox regression</a></li>
+</ul>
 </div>
 
 
