@@ -11,7 +11,7 @@
 
 
 
-<title>Functional data analysis with spatial summary functions</title>
+<title>Modeling patient-level outcomes</title>
 
 <script src="site_libs/header-attrs-2.21/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -370,8 +370,7 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Functional data analysis with spatial
-summary functions</h1>
+<h1 class="title toc-ignore">Modeling patient-level outcomes</h1>
 
 </div>
 
@@ -383,15 +382,367 @@ summary functions</h1>
 </div>
 <div id="overview" class="section level2">
 <h2>Overview</h2>
+<p>This module focuses on modeling patient-level outcomes, specifically
+patient survival time, using spatial summary statistics derived from
+multiplex images as model covariates. First we use traditional
+regression models and single-number patient summaries. Then, we model
+entire spatial summary functions using methods from functional data
+analysis.</p>
 <p>Load data and libraries.</p>
 <pre class="r"><code>library(tidyverse)
 library(patchwork)
+library(spatstat)
+library(survival)
+library(refund)
+library(refund.shiny)
 
-# load processed ovarian cancer data
-load(file = here::here(&quot;DataCode&quot;, &quot;ovarian.RDA&quot;))</code></pre>
+# load processed ovarian cancer data from GitHub
+load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA&quot;))</code></pre>
 </div>
 <div id="regression-with-patient-level-outcomes" class="section level2">
 <h2>Regression with patient level outcomes</h2>
+<p>The general workflow is:</p>
+<ol style="list-style-type: decimal">
+<li>Select a spatial summary measure (e.g. bivariate Ripley’s K).</li>
+<li>Choose a particular radius <em>r</em> at which to evaluate Ripley’s
+K. This can be selected based on clinical knowledge.</li>
+<li>Choose a cell spatial relationship you want to analyze
+(e.g. co-occurence of B-cells and macrophages).</li>
+<li>Evaluate bivariate Ripley’s K for B-cells and Macrophages at radius
+<em>r</em> for all images in the dataset. This will result in a single
+number spatial summary for each image.</li>
+<li>Select a patient-level outcome of interest (e.g. survival)</li>
+<li>Model the outcome, using and the spatial summary statistic as a
+covariate. Include other potential confounders.</li>
+</ol>
+<div id="ovarian-immune-cell-clustering-and-patient-survival"
+class="section level3">
+<h3>Ovarian immune cell clustering and patient survival</h3>
+<p>I am interested in the relationship between patient survival and the
+clustering of immune cells within the tumor areas in the ovarian cancer
+dataset. For this analysis I am only interested in whether a cell is an
+immune cell or not, so I will collapse immune cell subtypes (B-cell,
+macrophage, CD8 T cell) into one “immune cell” category. I will then
+calculate univariate L at radius <em>r = 100</em> for immune cells.</p>
+<div id="calculating-the-spatial-summary-statistics"
+class="section level4">
+<h4>Calculating the spatial summary statistics</h4>
+<p>First I define a function that can be used to extract the L-function
+at a particular radius or set of radii.</p>
+<pre class="r"><code>
+# function to extract univariate spatial summary statistics
+extract_univariate = function(data, x = &quot;x&quot;, y = &quot;y&quot;,
+                      subject_id = &quot;sample_id&quot;,
+                      marksvar,
+                      mark1 = &quot;immune&quot;,
+                      mark2 = NULL,
+                      r_vec = seq(0, 300, by = 10),
+                      func = Lest){
+  # create a convex hull as the observation window
+  w = convexhull.xy(data[[x]], data[[y]])
+
+  # create ppp object
+  pp_obj = ppp(data[[x]], data[[y]], window = w, marks = data[[marksvar]])
+
+  # estimate L using spatstat
+  L_spatstat = func(subset(pp_obj, marks == mark1),
+                    r = r_vec,
+                    correction = c(&quot;iso&quot;)
+  )
+
+  
+  df = as_tibble(L_spatstat) %&gt;%
+    select(r, L = iso, csr = theo) %&gt;%
+    mutate(Ldiff = L - csr,
+           subject_id = data[[subject_id]][1]) %&gt;%
+    select(subject_id, r, L, csr, Ldiff)
+
+  df
+
+}</code></pre>
+<p>Then I organize the data and apply this function</p>
+<pre class="r"><code>df_nest = ovarian_df %&gt;%
+  # subset to tumor areas
+  filter(tissue_category == &quot;Tumor&quot;) %&gt;%
+  mutate(id = sample_id) %&gt;%
+  dplyr::select(sample_id, x, y, immune, id) %&gt;%
+  nest(data = c(sample_id, x, y, immune))
+
+L_df = map_dfr(df_nest$data, extract_univariate, 
+               marksvar = &quot;immune&quot;, mark1 = &quot;immune&quot;,
+               r_vec = c(0, 50, 100))
+## Warning: data contain duplicated points
+## Warning: 1 point was rejected as lying outside the specified window
+## Warning: data contain duplicated points
+## Warning: 1 point was rejected as lying outside the specified window
+
+L_df
+## # A tibble: 384 × 5
+##    subject_id     r     L   csr Ldiff
+##         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1         68     0   0       0   0  
+##  2         68    50  83.5    50  33.5
+##  3         68   100 138.    100  37.6
+##  4         69     0   0       0   0  
+##  5         69    50 114.     50  64.1
+##  6         69   100 176.    100  76.1
+##  7         70     0   0       0   0  
+##  8         70    50  62.9    50  12.9
+##  9         70   100 115.    100  15.4
+## 10         71     0   0       0   0  
+## # ℹ 374 more rows</code></pre>
+<p>We want to use the <code>Ldiff</code> variable, which is the
+difference between the observed L and the theoretical L under CSR, in
+our model. This value will be positive if cells are clustered in an
+image, negative if cells show spatial regularity, and close to zer if
+cells exhibit CSR. We will select the <code>Ldiff</code> value at <em>r
+= 100</em>. I visualize this variable below.</p>
+<pre class="r"><code>L_df = L_df %&gt;%
+  filter(r == 100) %&gt;%
+  select(subject_id, Ldiff)
+
+L_df %&gt;%
+  ggplot(aes(Ldiff)) +
+  geom_histogram() +
+  geom_vline(xintercept = 0) </code></pre>
+<p><img src="MI_fda_files/figure-html/unnamed-chunk-5-1.png" width="90%" /></p>
+<p>Let’s examine the subject with the outlying Ldiff value. It appears
+that they have very few immune cells, so the Ldiff cannot be well
+estimated. We will remove this subject.</p>
+<pre class="r"><code>id = L_df %&gt;% filter(Ldiff &gt; 200)  %&gt;% pull(subject_id)
+
+ovarian_df %&gt;% 
+  filter(sample_id %in% id,
+         tissue_category == &quot;Tumor&quot;) %&gt;%
+  ggplot(aes(x, y, color = immune)) +
+  geom_point(size = .1)</code></pre>
+<p><img src="MI_fda_files/figure-html/unnamed-chunk-6-1.png" width="90%" /></p>
+<pre class="r"><code>
+# remove this subject
+L_df = L_df %&gt;% filter(Ldiff &lt;=200)</code></pre>
+</div>
+<div id="modeling-patient-survival" class="section level4">
+<h4>Modeling patient survival</h4>
+<p>First I merge the patient level outcome data with the L summary
+statistics.</p>
+<pre class="r"><code>survival_df = ovarian_df %&gt;%
+  # rename id variable to be compatible with L_df and select covariates of interest
+  dplyr::select(subject_id = sample_id, 
+                survival_time, death, age = age_at_diagnosis) %&gt;%
+  # delete duplicates- should only have one row per subject
+  distinct() %&gt;%
+  # remove subject with outlying survival time
+  filter(survival_time &lt; 200) %&gt;%
+  # merge with L function data
+  left_join(., L_df, by = &quot;subject_id&quot;)</code></pre>
+<p>Below I plot the survival time against Ldiff values, colored by
+survival status. It does appear that lower values of Ldiff (indicating
+less extreme immune clustering) have longer survival times.</p>
+<pre class="r"><code>survival_df %&gt;%
+  ggplot(aes(Ldiff, survival_time)) +
+  geom_point(aes(color = factor(death)))
+## Warning: Removed 1 rows containing missing values (`geom_point()`).</code></pre>
+<p><img src="MI_fda_files/figure-html/unnamed-chunk-8-1.png" width="90%" /></p>
+<p>Last we run a proportional hazards model to model this different. We
+will run this model using functions from the <code>survival</code>
+package. I log transform the L variable to make it appear more linear.
+There are also two rather extreme outliers. I would recommend looking at
+the images from these outliers and potentially removing these
+subjects.</p>
+<pre class="r"><code>phmod = coxph(Surv(survival_time, death) ~ Ldiff + age, 
+              data = survival_df)
+summary(phmod)
+## Call:
+## coxph(formula = Surv(survival_time, death) ~ Ldiff + age, data = survival_df)
+## 
+##   n= 126, number of events= 79 
+##    (1 observation deleted due to missingness)
+## 
+##           coef exp(coef) se(coef)     z Pr(&gt;|z|)   
+## Ldiff 0.009221  1.009263 0.002911 3.168  0.00153 **
+## age   0.014171  1.014272 0.011298 1.254  0.20974   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##       exp(coef) exp(-coef) lower .95 upper .95
+## Ldiff     1.009     0.9908    1.0035     1.015
+## age       1.014     0.9859    0.9921     1.037
+## 
+## Concordance= 0.621  (se = 0.034 )
+## Likelihood ratio test= 13.5  on 2 df,   p=0.001
+## Wald test            = 14.9  on 2 df,   p=6e-04
+## Score (logrank) test = 15.6  on 2 df,   p=4e-04</code></pre>
+<p>Here the coefficients are log-hazard ratios. The exponentiated
+coefficient for <code>Ldiff</code> &gt; 1, indicating that the hazard of
+death is greater for a subject with a greater degree of immune
+clustering.</p>
+<p>Some caveats about this analysis:</p>
+<ul>
+<li>We cannot distinguish clustering from inhomogeneity, so we may want
+to consider calculating L using a metric that takes into account
+potential inhomogeneity in the distribution of cells. This could be the
+<code>spatstat::Linhom()</code> function, or using the permutation
+approach in <code>spatialTIME</code>.</li>
+<li>It is important to check validity of model assumptions, which we
+have not done here</li>
+<li>In a more thorough analysis I would control for other clinical
+variables that may be potential confounders.</li>
+</ul>
+</div>
+</div>
+<div id="macrophage-and-b-cell-co-occurence-in-ovarian-cancer"
+class="section level3">
+<h3>Macrophage and B-cell co-occurence in ovarian cancer</h3>
+<p>Here I am interested in the relationship between patient survival and
+the co-occurence of B cells and macrophages in the ovarian cancer
+dataset. I will use bivariate L at radius <em>r = 100</em> to assess the
+spatial relationship between B-cells and macrophages.</p>
+<div id="calculating-the-spatial-summary-statistics-1"
+class="section level4">
+<h4>Calculating the spatial summary statistics</h4>
+<p>First I define a function that can be used to extract the bivariate
+L-function at a particular radius or set of radii.</p>
+<pre class="r"><code># function to extract univariate spatial summary statistics
+extract_bivariate = function(data, x = &quot;x&quot;, y = &quot;y&quot;,
+                             subject_id = &quot;sample_id&quot;,
+                             marksvar,
+                             mark1 = &quot;B-cell&quot;,
+                             mark2 = &quot;macrophage&quot;,
+                             r_vec = seq(0, 300, by = 10)){
+  # create a convex hull as the observation window
+  w = convexhull.xy(data[[x]], data[[y]])
+
+  # create ppp object
+  pp_obj = ppp(data[[x]], data[[y]], window = w, marks = data[[marksvar]])
+
+  # estimate L using spatstat
+  L_spatstat = Lcross(pp_obj, mark1, mark2, r = r_vec, correction = &quot;iso&quot;)
+  
+  df = as_tibble(L_spatstat) %&gt;%
+    select(r, L = iso, csr = theo) %&gt;%
+    mutate(Ldiff = L - csr,
+           subject_id = data[[subject_id]][1]) %&gt;%
+    select(subject_id, r, L, csr, Ldiff)
+
+  df
+}</code></pre>
+<p>Then I organize the data to apply this function. However, some
+subjects do not have enough B-cells or macrophages to calculate the L
+function. We will exclude subjects with &lt; 3 macrophages or &lt; 3
+B-cells in the tumor area. In doing so, we lose several subjects.</p>
+<pre class="r"><code>df_bivariate = ovarian_df %&gt;%
+  filter(tissue_category == &quot;Tumor&quot;) %&gt;%
+  # subset to tumor areas
+  filter(tissue_category == &quot;Tumor&quot;) %&gt;%
+  # define B cell or macrophage variable
+  mutate(id = sample_id,
+         phenotype = case_when(phenotype_cd19 == &quot;CD19+&quot; ~ &quot;B-cell&quot;,
+                               phenotype_cd68 == &quot;CD68+&quot; ~ &quot;macrophage&quot;,
+                               TRUE ~ &quot;other&quot;),
+         phenotype = factor(phenotype)) %&gt;%
+  filter(phenotype != &quot;other&quot;) %&gt;%
+  dplyr::select(sample_id, x, y, phenotype, id) %&gt;%
+  # calculate number of macrophages and B-cells for each subject
+  group_by(sample_id)  %&gt;%
+  mutate(n_Bcell = sum(phenotype == &quot;B-cell&quot;),
+         n_mac = sum(phenotype == &quot;macrophage&quot;)) %&gt;%
+  ungroup() %&gt;%
+  filter(n_Bcell &gt; 2, n_mac &gt; 2) %&gt;%
+  # nest data
+  nest(data = c(sample_id, x, y, phenotype))</code></pre>
+<pre class="r"><code>Lbivariate_df = map_dfr(df_bivariate$data, extract_bivariate, 
+                        marksvar = &quot;phenotype&quot;, 
+                        r_vec = c(0, 50, 100))
+
+Lbivariate_df
+## # A tibble: 198 × 5
+##    subject_id     r     L   csr  Ldiff
+##         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+##  1         68     0   0       0  0    
+##  2         68    50  64.3    50 14.3  
+##  3         68   100  99.3   100 -0.730
+##  4         69     0   0       0  0    
+##  5         69    50  57.6    50  7.61 
+##  6         69   100 141.    100 41.1  
+##  7         70     0   0       0  0    
+##  8         70    50  49.4    50 -0.565
+##  9         70   100 140.    100 39.8  
+## 10         72     0   0       0  0    
+## # ℹ 188 more rows</code></pre>
+<p>Histogram of the bivariate Ldiff variable:</p>
+<pre class="r"><code>Lbivariate_df = Lbivariate_df %&gt;%
+  filter(r == 100) %&gt;%
+  select(subject_id, Ldiff)
+
+Lbivariate_df %&gt;%
+  ggplot(aes(Ldiff)) +
+  geom_histogram() +
+  geom_vline(xintercept = 0) </code></pre>
+<p><img src="MI_fda_files/figure-html/unnamed-chunk-13-1.png" width="90%" /></p>
+</div>
+<div id="modeling-patient-survival-1" class="section level4">
+<h4>Modeling patient survival</h4>
+<p>First I merge the patient level outcome data with the L summary
+statistics.</p>
+<pre class="r"><code>survival_df = ovarian_df %&gt;%
+  # rename id variable to be compatible with L_df and select covariates of interest
+  dplyr::select(subject_id = sample_id, 
+                survival_time, death, age = age_at_diagnosis) %&gt;%
+  # delete duplicates- should only have one row per subject
+  distinct() %&gt;%
+  # remove subject with outlying survival time
+  filter(survival_time &lt; 200) %&gt;%
+  # merge with L function data
+  left_join(., Lbivariate_df, by = &quot;subject_id&quot;)</code></pre>
+<p>Now it appears that larger L values (more clustering between B cells
+and macrophages) is associated with better survival prognosis.</p>
+<pre class="r"><code>survival_df %&gt;%
+  ggplot(aes(Ldiff, survival_time)) +
+  geom_point(aes(color = factor(death)))
+## Warning: Removed 61 rows containing missing values (`geom_point()`).</code></pre>
+<p><img src="MI_fda_files/figure-html/unnamed-chunk-15-1.png" width="90%" /></p>
+<p>Run the proportional hazards regression model with bivariate L as a
+covariate.</p>
+<pre class="r"><code>phmod2 = coxph(Surv(survival_time, death) ~ Ldiff + age, 
+              data = survival_df)
+summary(phmod2)
+## Call:
+## coxph(formula = Surv(survival_time, death) ~ Ldiff + age, data = survival_df)
+## 
+##   n= 66, number of events= 35 
+##    (61 observations deleted due to missingness)
+## 
+##            coef exp(coef)  se(coef)      z Pr(&gt;|z|)  
+## Ldiff -0.014583  0.985522  0.006935 -2.103   0.0355 *
+## age    0.012650  1.012730  0.015464  0.818   0.4133  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##       exp(coef) exp(-coef) lower .95 upper .95
+## Ldiff    0.9855     1.0147    0.9722     0.999
+## age      1.0127     0.9874    0.9825     1.044
+## 
+## Concordance= 0.567  (se = 0.063 )
+## Likelihood ratio test= 5.28  on 2 df,   p=0.07
+## Wald test            = 5.35  on 2 df,   p=0.07
+## Score (logrank) test = 5.39  on 2 df,   p=0.07</code></pre>
+<p>Now the exponentiated coefficient for <code>Ldiff</code> &lt; 1,
+indicating that the hazard of death is smaller for a subject with a
+greater degree co-occurence between B-cells and macrophages.</p>
+<p>Some caveats about this analysis:</p>
+<ul>
+<li>We removed a lot of subjects (61) because we didn’t have enough
+subjects to calculate the bivariate L function. I would recommend
+either:
+<ul>
+<li>Creating a categorical L variable that includes a “not estimable”
+group so as to not lose these subjects</li>
+<li>Or, using something like the G function which is more robust to rare
+cells and fewer subjects would be lost.</li>
+</ul></li>
+</ul>
+</div>
+</div>
 </div>
 <div id="functional-data-analysis" class="section level2">
 <h2>Functional data analysis</h2>

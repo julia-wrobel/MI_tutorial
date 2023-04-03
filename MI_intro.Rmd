@@ -53,13 +53,13 @@ library(tiff)
 library(EBImage)
 
 
-# define your specific file path
-my_path = here::here("DataCode")
+# load from GitHub
 
 # define file for different .tif files
-component = paste0(my_path, "/", "#16 3-171-807_[62243,18509]_component_data.tif")
-binseg = paste0(my_path, "/", "#16 3-171-807_[62243,18509]_binary_seg_maps.tif")
-composite_tif = paste0(my_path, "/", "#16 3-171-807_[62243,18509].tif")
+component = url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/%2316%203-171-807_%5B62243%2C18509%5D_component_data.tif")
+binseg = url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/%2316%203-171-807_%5B62243%2C18509%5D_binary_seg_maps.tif")
+
+composite_tif = url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/%2316%203-171-807_%5B62243%2C18509%5D.tif")
 ```
 
 
