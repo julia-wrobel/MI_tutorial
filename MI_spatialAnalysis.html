@@ -390,7 +390,7 @@ multiplex imaging data.</p>
 library(patchwork)
 
 # load processed ovarian cancer data
-load(file = here::here(&quot;DataCode&quot;, &quot;ovarian.RDA&quot;))</code></pre>
+load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA&quot;))</code></pre>
 <div id="visualize-point-patterns" class="section level3">
 <h3>Visualize point patterns</h3>
 <p>Below we visualize a point pattern for a single subject from the
@@ -584,17 +584,12 @@ values =  RColorBrewer::brewer.pal(length(cell_types), &quot;Accent&quot;)
 df_spatialTIME &lt;- plot_immunoflo(df_spatialTIME, 
                    plot_title = &quot;sample_id&quot;,  mnames = cell_types,
                    cell_type = &quot;tissue_category&quot;)
-## Warning: `progress_estimated()` was deprecated
-## in dplyr 1.0.0.
-## ℹ The deprecated feature was likely
-##   used in the spatialTIME package.
+## Warning: `progress_estimated()` was deprecated in dplyr 1.0.0.
+## ℹ The deprecated feature was likely used in the spatialTIME package.
 ##   Please report the issue at
 ##   &lt;https://github.com/FridleyLab/spatialTIME/issues&gt;.
-## This warning is displayed once every 8
-## hours.
-## Call
-## `lifecycle::last_lifecycle_warnings()`
-## to see where this warning was
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
 ## generated.
 ## Warning in RColorBrewer::brewer.pal(length(mnames), &quot;Paired&quot;): minimal value for n is 3, returning requested palette with 3 different levels
 

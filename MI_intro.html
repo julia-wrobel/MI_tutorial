@@ -408,10 +408,21 @@ Makes pretty pictures.</li>
 
 # load relevant libraries
 library(tidyverse)
+## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.1     ✔ readr     2.1.4
+## ✔ forcats   1.0.0     ✔ stringr   1.5.0
+## ✔ ggplot2   3.4.1     ✔ tibble    3.2.1
+## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
+## ✔ purrr     1.0.1     
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()
+## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors
 library(tiff)
 library(EBImage)
 ## 
 ## Attaching package: &#39;EBImage&#39;
+## 
 ## The following object is masked from &#39;package:purrr&#39;:
 ## 
 ##     transpose
@@ -421,9 +432,9 @@ library(EBImage)
 my_path = here::here(&quot;DataCode&quot;)
 
 # define file for different .tif files
-component = paste0(my_path, &quot;/&quot;, &quot;#16 3-171-807_[62243,18509]_component_data.tif&quot;)
-binseg = paste0(my_path, &quot;/&quot;, &quot;#16 3-171-807_[62243,18509]_binary_seg_maps.tif&quot;)
-composite_tif = paste0(my_path, &quot;/&quot;, &quot;#16 3-171-807_[62243,18509].tif&quot;)</code></pre>
+component = here::here(&quot;DataCode&quot;, &quot;lung_component_data.tif&quot;) 
+binseg =  here::here(&quot;DataCode&quot;, &quot;lung_binary_seg_maps.tif&quot;)
+composite_tif = here::here(&quot;DataCode&quot;, &quot;lung.tif&quot;)</code></pre>
 <p>The subject and image ID are embedded in the file name. For example,
 for the file “#12 2-690-981 P44_[48428,17215].tif”, “12 2-690-981” is
 the subject id, and “48428,17215” is the image ID.</p>

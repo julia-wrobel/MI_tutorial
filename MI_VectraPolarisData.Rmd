@@ -280,10 +280,10 @@ save(ovarian_df, file = here::here("DataCode", "ovarian.RDA"))
 save(lung_df, file = here::here("DataCode", "lung.RDA"))
 
 # load processed ovarian data
-load(file = here::here("DataCode", "ovarian.RDA"))
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA"))
 
 # load processed lung data
-load(file = here::here("DataCode", "lung.RDA"))
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA"))
 ```
 
 
