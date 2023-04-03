@@ -30,12 +30,12 @@ knitr::opts_chunk$set(
 
 Below I briefly talk about loading and visualizing raw TIFF data. The rest of the workshop will focus on data in tabular form post segmentation.
 
-### NSCLC
+### Lung cancer data
 
-Below I do some exploratory data analysis with multichannel tiff files from a Vectra instrument. We are looking at a tissue slice from a patient with lung cancer.
+Below I do some exploratory data analysis with multichannel tiff files from a Vectra instrument. We are looking at a tissue slice from a patient with non small cell lung carcinoma from one of the datasets available in the `VectraPolarisData` package.
 
 
-Cell and tissue segmentation and cell phenotyping were performed using Inform software. For each image, there are multiple Tiff files:
+Cell and tissue segmentation and cell phenotyping were performed using inForm software. For each image, there are multiple Tiff files:
 
 
 * `*component_data.tif`: the multichannel file we are most interested in
@@ -44,9 +44,13 @@ Cell and tissue segmentation and cell phenotyping were performed using Inform so
 
 
 ```{r}
+
+#BiocManager::install("EBImage")
+
 # load relevant libraries
 library(tidyverse)
 library(tiff)
+library(EBImage)
 
 
 # define your specific file path
@@ -100,12 +104,12 @@ I can use the `display()` function from the `EBImage` package to plot an individ
 
 ```{r}
 dapi_channel = t(image_stack$"DAPI (DAPI)")
-EBImage::display(t(dapi_channel), method = "raster")
+EBImage::display(dapi_channel, method = "raster")
 
 
 # plot the image in a specified color
 dapi = rgbImage(blue=.1*dapi_channel, red = .02 * dapi_channel)
-#display(dapi)
+display(dapi, method = "raster")
 ```
 
 #### Segmentation files
@@ -113,8 +117,6 @@ dapi = rgbImage(blue=.1*dapi_channel, red = .02 * dapi_channel)
 This data was collected on a Vectra 3 instrument and segmented using [inForm](https://www.akoyabio.com/phenoimager/software/inform-tissue-finder/) tissue analysis     software from Akoya Biosciences. This is proprietary image analysis software that can perform cell and tissue segmentation and cell phenotyping. The segmentation below were performed by that software.
 
 ```{r}
-
-
 # source phenoptr code for loading file and metadata, based on tiff::readTIFF.
 source("https://raw.githubusercontent.com/akoyabio/phenoptr/main/R/read_maps.R")
 
@@ -141,8 +143,6 @@ plot(as.raster(tissue, max = max(tissue)))
 #### Composite file
 
 ```{r}
-
-
 # source phenoptr code for loading file and metadata, based on tiff::readTIFF.
 source("https://raw.githubusercontent.com/akoyabio/phenoptr/main/R/read_composites.R")
 
@@ -154,19 +154,18 @@ composite = as.raster(composite[[1]])
 plot(composite)
 ```
 
-### MIBI
-
-Try with an image from the MIBI paper
 
 
-
-
-## Links
+## References
 
 Below are original citations for the two example datasets I will be working with in this tutorial.
 
 * [Paper for ovarian cancer data](https://aacrjournals.org/mcr/article/19/12/1973/675069/The-Spatial-Context-of-Tumor-Infiltrating-Immune)
 * [Paper for non-small cell lung carcinoma data](https://pubmed.ncbi.nlm.nih.gov/34048945/)
+
+Resources from Akoya Biosciences on working with this data
+
+* [phenoptr R package](https://akoyabio.github.io/phenoptr/)
 
 Below are some references that review this rapidly growing area.
 

@@ -13,7 +13,7 @@
 
 <title>Introduction to multiplex single-cell imaging data</title>
 
-<script src="site_libs/header-attrs-2.19/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.21/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
@@ -35,8 +35,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
-<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.2.1/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.2.1/css/v4-shims.min.css" rel="stylesheet" />
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -316,7 +316,7 @@ div.tocify {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="index.html">ICAMPAM 2017</a>
+      <a class="navbar-brand" href="index.html">Analysis of multiplex single-cell imaging data in R</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
@@ -334,19 +334,19 @@ div.tocify {
       <a href="shortcourse_data.html">Data Download (provide .Rdata small version of dataset and 1-2 real images)</a>
     </li>
     <li>
-      <a href="shortcourse_notation.html">Background on multiplex single-cell imaging</a>
+      <a href="MI_intro.html">Background on multiplex single-cell imaging</a>
     </li>
     <li>
-      <a href="shortcourse_fpca.html">VectraPolarisData package and EDA</a>
+      <a href="MI_VectraPolarisData.html">VectraPolarisData package</a>
     </li>
     <li>
-      <a href="shortcourse_sofr.html">Segmentation, phenotyping, and batch correction</a>
+      <a href="MI_normalization.html">Segmentation, normalization, and phenotyping</a>
     </li>
     <li>
-      <a href="shortcourse_fosr.html">Spatial analysis approaches</a>
+      <a href="MI_spatialAnalysis.html">Extracting spatial summary statistics</a>
     </li>
     <li>
-      <a href="shortcourse_fosr.html">Functional data analysis approaches</a>
+      <a href="MI_fda.html">Modeling patient-level outcomes</a>
     </li>
   </ul>
 </li>
@@ -356,7 +356,7 @@ div.tocify {
   <a href="about.html">About</a>
 </li>
 <li>
-  <a href="http://github.com/jeff-goldsmith/ICAMPAM">
+  <a href="http://juliawrobel.com/MI_tutorial/">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -381,16 +381,19 @@ imaging data</h1>
 <iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/19588e79e83146a8bc844ed2f335c79e" title="MI_intro" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586">
 </iframe>
 </div>
-<div id="data" class="section level2">
-<h2>Data</h2>
-<p>Here I briefly talk about loading raw data.</p>
-<div id="nsclc" class="section level3">
-<h3>NSCLC</h3>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>Below I briefly talk about loading and visualizing raw TIFF data. The
+rest of the workshop will focus on data in tabular form post
+segmentation.</p>
+<div id="lung-cancer-data" class="section level3">
+<h3>Lung cancer data</h3>
 <p>Below I do some exploratory data analysis with multichannel tiff
 files from a Vectra instrument. We are looking at a tissue slice from a
-patient with lung cancer.</p>
+patient with non small cell lung carcinoma from one of the datasets
+available in the <code>VectraPolarisData</code> package.</p>
 <p>Cell and tissue segmentation and cell phenotyping were performed
-using Inform software. For each image, there are multiple Tiff
+using inForm software. For each image, there are multiple Tiff
 files:</p>
 <ul>
 <li><code>*component_data.tif</code>: the multichannel file we are most
@@ -400,16 +403,21 @@ maps</li>
 <li><code>"subject_id".tif</code>: A composite image in RGB format.
 Makes pretty pictures.</li>
 </ul>
-<pre class="r"><code># load relevant libraries
+<pre class="r"><code>
+#BiocManager::install(&quot;EBImage&quot;)
+
+# load relevant libraries
 library(tidyverse)
-## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
-## ✔ ggplot2 3.4.0      ✔ purrr   0.3.5 
-## ✔ tibble  3.1.8      ✔ dplyr   1.0.10
-## ✔ tidyr   1.2.1      ✔ stringr 1.5.0 
-## ✔ readr   2.1.3      ✔ forcats 0.5.2 
+## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.1     ✔ readr     2.1.4
+## ✔ forcats   1.0.0     ✔ stringr   1.5.0
+## ✔ ggplot2   3.4.1     ✔ tibble    3.2.1
+## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
+## ✔ purrr     1.0.1     
 ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
+## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors
 library(tiff)
 library(EBImage)
 ## 
@@ -418,6 +426,7 @@ library(EBImage)
 ## The following object is masked from &#39;package:purrr&#39;:
 ## 
 ##     transpose
+
 
 # define your specific file path
 my_path = here::here(&quot;DataCode&quot;)
@@ -484,13 +493,14 @@ element is a different marker</p>
 <code>EBImage</code> package to plot an individual channel. Below the
 DAPI (nucleus) channel is plotted.</p>
 <pre class="r"><code>dapi_channel = t(image_stack$&quot;DAPI (DAPI)&quot;)
-EBImage::display(t(dapi_channel), method = &quot;raster&quot;)</code></pre>
+EBImage::display(dapi_channel, method = &quot;raster&quot;)</code></pre>
 <p><img src="MI_intro_files/figure-html/unnamed-chunk-5-1.png" width="90%" /></p>
 <pre class="r"><code>
 
 # plot the image in a specified color
 dapi = rgbImage(blue=.1*dapi_channel, red = .02 * dapi_channel)
-#display(dapi)</code></pre>
+display(dapi, method = &quot;raster&quot;)</code></pre>
+<p><img src="MI_intro_files/figure-html/unnamed-chunk-5-2.png" width="90%" /></p>
 </div>
 <div id="segmentation-files" class="section level4">
 <h4>Segmentation files</h4>
@@ -501,9 +511,7 @@ tissue analysis software from Akoya Biosciences. This is proprietary
 image analysis software that can perform cell and tissue segmentation
 and cell phenotyping. The segmentation below were performed by that
 software.</p>
-<pre class="r"><code>
-
-# source phenoptr code for loading file and metadata, based on tiff::readTIFF.
+<pre class="r"><code># source phenoptr code for loading file and metadata, based on tiff::readTIFF.
 source(&quot;https://raw.githubusercontent.com/akoyabio/phenoptr/main/R/read_maps.R&quot;)
 
 segmentations = read_maps(binseg)
@@ -521,9 +529,7 @@ plot(as.raster(tissue, max = max(tissue)))</code></pre>
 </div>
 <div id="composite-file" class="section level4">
 <h4>Composite file</h4>
-<pre class="r"><code>
-
-# source phenoptr code for loading file and metadata, based on tiff::readTIFF.
+<pre class="r"><code># source phenoptr code for loading file and metadata, based on tiff::readTIFF.
 source(&quot;https://raw.githubusercontent.com/akoyabio/phenoptr/main/R/read_composites.R&quot;)
 
 composite = read_composites(composite_tif)</code></pre>
@@ -532,13 +538,9 @@ plot(composite)</code></pre>
 <p><img src="MI_intro_files/figure-html/unnamed-chunk-10-1.png" width="90%" /></p>
 </div>
 </div>
-<div id="mibi" class="section level3">
-<h3>MIBI</h3>
-<p>Try with an image from the MIBI paper</p>
 </div>
-</div>
-<div id="links" class="section level2">
-<h2>Links</h2>
+<div id="references" class="section level2">
+<h2>References</h2>
 <p>Below are original citations for the two example datasets I will be
 working with in this tutorial.</p>
 <ul>
@@ -547,6 +549,11 @@ href="https://aacrjournals.org/mcr/article/19/12/1973/675069/The-Spatial-Context
 for ovarian cancer data</a></li>
 <li><a href="https://pubmed.ncbi.nlm.nih.gov/34048945/">Paper for
 non-small cell lung carcinoma data</a></li>
+</ul>
+<p>Resources from Akoya Biosciences on working with this data</p>
+<ul>
+<li><a href="https://akoyabio.github.io/phenoptr/">phenoptr R
+package</a></li>
 </ul>
 <p>Below are some references that review this rapidly growing area.</p>
 <ul>
