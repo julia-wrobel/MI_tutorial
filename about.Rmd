@@ -1,0 +1,18 @@
+---
+title: "About This Website"
+---
+
+This is an [R Markdown website](http://rmarkdown.rstudio.com/rmarkdown_websites.html), created by [Julia Wrobel](http://juliawrobel.com) for a multiplex single-cell imaging data workshop at the University of Michigan Department of Biostatistics.
+
+In the short course, we'll actively use the `refund` packages, and sometimes will use `refund.shiny` and `tidyverse`. Code to install the packages follows, and version information about each of these packages and their dependencies is at the bottom of this page.
+
+```{r, eval=FALSE}
+install.packages(c("tidyverse", "refund"))
+```
+
+Versions of key packages:
+
+```{r}
+devtools::session_info(c("spatstat", "spatialTIME", "refund"))
+```
+
