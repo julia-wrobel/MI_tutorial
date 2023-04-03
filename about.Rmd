@@ -13,6 +13,6 @@ install.packages(c("tidyverse", "refund"))
 Versions of key packages:
 
 ```{r}
-devtools::session_info(c("spatstat", "spatialTIME", "refund"))
+devtools::session_info(c("tidyverse", "VectraPolarisData", "spatstat", "spatialTIME", "refund"))
 ```
 

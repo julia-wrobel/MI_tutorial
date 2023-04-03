@@ -23,8 +23,7 @@ knitr::opts_chunk$set(
 
 ## Slide Deck
 
-<iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/19588e79e83146a8bc844ed2f335c79e" title="MI_intro" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586"></iframe>
-
+<iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/ccecd0548b874505b4bdd80172769ffe" title="MI_normalization" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586"></iframe>
 
 ## Normalization
 
@@ -45,7 +44,7 @@ As an illustrative example will use the `mxnorm` package to normalize the lung d
 - Use `tissue_category` as a metadata column
 
 
-```{r}
+```{r, eval = FALSE}
 
 mx_data = mx_dataset(data = cell_level_lung,
                      slide_id = "slide_id",
@@ -69,7 +68,7 @@ summary(mx_data)
 
 And let's look at the data object we're going to use going forward:
 
-```{r}
+```{r, eval = FALSE}
 knitr::kable(head(mx_data$data))  %>%
     kableExtra::kable_styling() %>% kableExtra::scroll_box(width = "100%")
 ```
@@ -81,7 +80,7 @@ Normalize using two methods: `log10`, and `mean_divide`. Then, calculate Otsu di
 
 
 
-```{r mxnorm, cache = TRUE}
+```{r mxnorm, eval = FALSE}
 mx_norm = mx_normalize(mx_data,
                        transform = "log10_mean_divide",
                        method = "None")
@@ -105,7 +104,7 @@ mx_norm = run_reduce_umap(mx_norm,
 
 Summary table that calculates the metrics from the Bioinformatics paper is printed below
 
-```{r mxnorm_stats, cache = TRUE}
+```{r mxnorm_stats, eval = FALSE}
 # calculate metrics for unnormalized and normalized data
 summary(mx_norm)
 ```
@@ -114,7 +113,7 @@ summary(mx_norm)
 
 First, density plots. Only showing density plots for unnormalized cells for two types of immune markers and 3 subjects.
 
-```{r density_mxnorm, cache = TRUE}
+```{r density_mxnorm,eval = FALSE}
 set.seed(103001)
 ids = sample(unique(cell_level_lung$slide_id), 3)
 markers = c("cd19", "cd14")
@@ -156,7 +155,7 @@ cd14 / cd19
 
 Discordance plots. Show for subset of markers and maybe subset of subjects.
 
-```{r discordance_mxnorm, cache = TRUE}
+```{r discordance_mxnorm, eval = FALSE}
 set.seed(103001)
 ids = sample(unique(cell_level_lung$slide_id), 15)
 
@@ -201,7 +200,7 @@ Add in phenograph plots. Clustering using normalized marker values for a single 
 
 Now using normalized marker values
 
-```{r phenograph_norm, cache = TRUE}
+```{r phenograph_norm, eval = FALSE}
 norm_df = mx_norm$norm_data %>%
   filter(slide_id == "#01 0-889-121") %>%
   dplyr::select(cd19, cd3, cd14, cd8, ck, contains("phenotype")) %>%
@@ -231,11 +230,15 @@ norm_df$phenograph_cluster <- factor(membership(phen_results[[2]]))
 
 ```
 
- Number of clusters normalize is `r length(unique(norm_df$phenograph_cluster))`
+ 
+```{r, eval = FALSE}
+Number of clusters normalize is `r length(unique(norm_df$phenograph_cluster))`
+```
+ 
 
 Plotted results for unnormalized phenograph labels, normalized phenograph labels, and Inform labels.
 
-```{r phenograph_plot, fig.width = 10}
+```{r phenograph_plot, fig.width = 10, eval = FALSE}
 p1 = norm_df %>%
   ggplot(aes(tsne1, tsne2, color = phenotype)) +
   geom_point(alpha = 0.5, size = 0.75) +

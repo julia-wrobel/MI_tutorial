@@ -1,0 +1,18 @@
+---
+title: "Data"
+output:
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+Two datasets will be used in the short course. They are below with brief descriptions.
+
+## Ovarian cancer
+
+DESCRIPTION AND DATA TO COME.
+
+
+## Lung cancer
+

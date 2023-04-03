@@ -7,8 +7,8 @@ navbar:
       href: index.html
     - text: "Short Course"
       menu:
-        - text: "Data Download (provide .Rdata small version of dataset and 1-2 real images)"
-          href: shortcourse_data.html
+        - text: "Data Download"
+          href: MI_Data.html
         - text: "Background on multiplex single-cell imaging"
           href: MI_intro.html
         - text: "VectraPolarisData package"
