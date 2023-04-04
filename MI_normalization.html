@@ -35,6 +35,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.2.1/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.2.1/css/v4-shims.min.css" rel="stylesheet" />
 
@@ -381,22 +383,64 @@ phenotyping, and normalization</h1>
 <iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/ccecd0548b874505b4bdd80172769ffe" title="MI_normalization" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586">
 </iframe>
 </div>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>This module performs and evaluates intensity normalization using the
+<code>mxnorm</code> package.</p>
+<p>Load data and libraries.</p>
+<pre class="r"><code>library(tidyverse)
+## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.1     ✔ readr     2.1.4
+## ✔ forcats   1.0.0     ✔ stringr   1.5.0
+## ✔ ggplot2   3.4.1     ✔ tibble    3.2.1
+## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
+## ✔ purrr     1.0.1     
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()
+## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors
+library(viridis)
+## Loading required package: viridisLite
+library(patchwork)
+
+# load processed lung cancer data
+load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA&quot;))
+
+# for computational reasons, I will perform on a subset of the data with 20 subjects
+ids = sample(unique(lung_df$patient_id), 20)
+lung_df  = lung_df %&gt;% filter(patient_id %in% ids)</code></pre>
+</div>
 <div id="normalization" class="section level2">
 <h2>Normalization</h2>
-<p>As an illustrative example will use the <code>mxnorm</code> package
-to normalize the lung data.</p>
+<p>I will use the <code>mxnorm</code> package to normalize the lung
+data. More examples are available in the package vignette.</p>
 <div id="setting-up-mx_dataset-object" class="section level3">
 <h3>Setting up <code>mx_dataset</code> object</h3>
-<p>Use <code>slide_id</code> as slide identifier - Use
-<code>sample_id</code> as image identifier - Use the following marker
-columns: - <code>cd19</code> - <code>cd14</code> - <code>cd3</code> -
-<code>cd8</code> - <code>hladr</code> - <code>ck</code> -
-<code>dapi</code> - Use <code>tissue_category</code> as a metadata
-column</p>
-<pre class="r"><code>
-mx_data = mx_dataset(data = cell_level_lung,
-                     slide_id = &quot;slide_id&quot;,
-                     image_id = &quot;sample_id&quot;,
+<p>The <code>mxnorm</code> package uses an S3 object-oriented framework
+in R to define an mx_dataset which all operations are performed on.</p>
+<ul>
+<li>Use <code>patient_id</code> as slide identifier</li>
+<li>Use <code>image_id</code> as image identifier</li>
+<li>Use the following marker columns:
+<ul>
+<li><code>cd19</code></li>
+<li><code>cd14</code></li>
+<li><code>cd3</code></li>
+<li><code>cd8</code></li>
+<li><code>hladr</code></li>
+<li><code>ck</code></li>
+<li><code>dapi</code></li>
+</ul></li>
+<li>Use <code>tissue_category</code> as a metadata column</li>
+</ul>
+<pre class="r"><code># load the package
+# install.packages(&quot;mxnorm&quot;)
+library(mxnorm)
+
+# define the mx_dataset
+mx_data = mx_dataset(data = lung_df,
+                     slide_id = &quot;patient_id&quot;,
+                     image_id = &quot;image_id&quot;,
                      marker_cols = c(&quot;cd19&quot;,
                                      &quot;cd3&quot;,
                                      &quot;cd14&quot;,
@@ -405,21 +449,367 @@ mx_data = mx_dataset(data = cell_level_lung,
                                      &quot;ck&quot;,
                                      &quot;dapi&quot;
                                      ),
-                     metadata_cols = c(&quot;tissue_category&quot;, &quot;phenotype_ck&quot;, &quot;phenotype_cd8&quot;, &quot;phenotype_cd14&quot;,
-                                       &quot;phenotype_other&quot;, &quot;phenotype_cd19&quot;))
+                     metadata_cols = c(&quot;tissue_category&quot;, 
+                                       &quot;phenotype_ck&quot;, 
+                                       &quot;phenotype_cd8&quot;, 
+                                       &quot;phenotype_cd14&quot;,
+                                       &quot;phenotype_other&quot;, 
+                                       &quot;phenotype_cd19&quot;))
 
 
-
-summary(mx_data)</code></pre>
+class(mx_data)
+## [1] &quot;mx_dataset&quot;
+summary(mx_data)
+## Call:
+## `mx_dataset` object with 20 slide(s), 7 marker column(s), and 6 metadata column(s)</code></pre>
 <p>And let’s look at the data object we’re going to use going
 forward:</p>
 <pre class="r"><code>knitr::kable(head(mx_data$data))  %&gt;%
     kableExtra::kable_styling() %&gt;% kableExtra::scroll_box(width = &quot;100%&quot;)</code></pre>
+<div
+style="border: 1px solid #ddd; padding: 5px; overflow-x: scroll; width:100%; ">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+patient_id
+</th>
+<th style="text-align:left;">
+image_id
+</th>
+<th style="text-align:right;">
+cd19
+</th>
+<th style="text-align:right;">
+cd3
+</th>
+<th style="text-align:right;">
+cd14
+</th>
+<th style="text-align:right;">
+cd8
+</th>
+<th style="text-align:right;">
+hladr
+</th>
+<th style="text-align:right;">
+ck
+</th>
+<th style="text-align:right;">
+dapi
+</th>
+<th style="text-align:left;">
+tissue_category
+</th>
+<th style="text-align:left;">
+phenotype_ck
+</th>
+<th style="text-align:left;">
+phenotype_cd8
+</th>
+<th style="text-align:left;">
+phenotype_cd14
+</th>
+<th style="text-align:left;">
+phenotype_other
+</th>
+<th style="text-align:left;">
+phenotype_cd19
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+#11 3-499-643
+</td>
+<td style="text-align:left;">
+#11 3-499-643_[38278,7444].im3
+</td>
+<td style="text-align:right;">
+0.099
+</td>
+<td style="text-align:right;">
+0.057
+</td>
+<td style="text-align:right;">
+0.249
+</td>
+<td style="text-align:right;">
+0.144
+</td>
+<td style="text-align:right;">
+0.101
+</td>
+<td style="text-align:right;">
+2.393
+</td>
+<td style="text-align:right;">
+6.423
+</td>
+<td style="text-align:left;">
+Stroma
+</td>
+<td style="text-align:left;">
+CK-
+</td>
+<td style="text-align:left;">
+CD8-
+</td>
+<td style="text-align:left;">
+CD14-
+</td>
+<td style="text-align:left;">
+Other-
+</td>
+<td style="text-align:left;">
+CD19-
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+#11 3-499-643
+</td>
+<td style="text-align:left;">
+#11 3-499-643_[38278,7444].im3
+</td>
+<td style="text-align:right;">
+0.174
+</td>
+<td style="text-align:right;">
+0.060
+</td>
+<td style="text-align:right;">
+0.478
+</td>
+<td style="text-align:right;">
+0.124
+</td>
+<td style="text-align:right;">
+0.191
+</td>
+<td style="text-align:right;">
+3.458
+</td>
+<td style="text-align:right;">
+9.060
+</td>
+<td style="text-align:left;">
+Tumor
+</td>
+<td style="text-align:left;">
+CK+
+</td>
+<td style="text-align:left;">
+CD8-
+</td>
+<td style="text-align:left;">
+CD14-
+</td>
+<td style="text-align:left;">
+Other-
+</td>
+<td style="text-align:left;">
+CD19-
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+#11 3-499-643
+</td>
+<td style="text-align:left;">
+#11 3-499-643_[38278,7444].im3
+</td>
+<td style="text-align:right;">
+0.231
+</td>
+<td style="text-align:right;">
+0.020
+</td>
+<td style="text-align:right;">
+0.134
+</td>
+<td style="text-align:right;">
+0.095
+</td>
+<td style="text-align:right;">
+0.551
+</td>
+<td style="text-align:right;">
+0.525
+</td>
+<td style="text-align:right;">
+5.137
+</td>
+<td style="text-align:left;">
+Stroma
+</td>
+<td style="text-align:left;">
+CK-
+</td>
+<td style="text-align:left;">
+CD8-
+</td>
+<td style="text-align:left;">
+CD14-
+</td>
+<td style="text-align:left;">
+Other+
+</td>
+<td style="text-align:left;">
+CD19-
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+#11 3-499-643
+</td>
+<td style="text-align:left;">
+#11 3-499-643_[38278,7444].im3
+</td>
+<td style="text-align:right;">
+0.318
+</td>
+<td style="text-align:right;">
+0.032
+</td>
+<td style="text-align:right;">
+0.098
+</td>
+<td style="text-align:right;">
+0.097
+</td>
+<td style="text-align:right;">
+0.740
+</td>
+<td style="text-align:right;">
+0.737
+</td>
+<td style="text-align:right;">
+6.041
+</td>
+<td style="text-align:left;">
+Stroma
+</td>
+<td style="text-align:left;">
+CK-
+</td>
+<td style="text-align:left;">
+CD8-
+</td>
+<td style="text-align:left;">
+CD14-
+</td>
+<td style="text-align:left;">
+Other-
+</td>
+<td style="text-align:left;">
+CD19+
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+#11 3-499-643
+</td>
+<td style="text-align:left;">
+#11 3-499-643_[38278,7444].im3
+</td>
+<td style="text-align:right;">
+0.308
+</td>
+<td style="text-align:right;">
+0.048
+</td>
+<td style="text-align:right;">
+0.189
+</td>
+<td style="text-align:right;">
+0.149
+</td>
+<td style="text-align:right;">
+0.775
+</td>
+<td style="text-align:right;">
+0.825
+</td>
+<td style="text-align:right;">
+4.522
+</td>
+<td style="text-align:left;">
+Stroma
+</td>
+<td style="text-align:left;">
+CK-
+</td>
+<td style="text-align:left;">
+CD8-
+</td>
+<td style="text-align:left;">
+CD14-
+</td>
+<td style="text-align:left;">
+Other+
+</td>
+<td style="text-align:left;">
+CD19-
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+#11 3-499-643
+</td>
+<td style="text-align:left;">
+#11 3-499-643_[38278,7444].im3
+</td>
+<td style="text-align:right;">
+0.140
+</td>
+<td style="text-align:right;">
+0.250
+</td>
+<td style="text-align:right;">
+0.600
+</td>
+<td style="text-align:right;">
+0.132
+</td>
+<td style="text-align:right;">
+0.169
+</td>
+<td style="text-align:right;">
+1.335
+</td>
+<td style="text-align:right;">
+7.745
+</td>
+<td style="text-align:left;">
+Stroma
+</td>
+<td style="text-align:left;">
+CK-
+</td>
+<td style="text-align:left;">
+CD8-
+</td>
+<td style="text-align:left;">
+CD14-
+</td>
+<td style="text-align:left;">
+Other-
+</td>
+<td style="text-align:left;">
+CD19-
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 <div id="normalize-using-mx_normalize" class="section level3">
 <h3>Normalize using <code>mx_normalize()</code></h3>
-<p>Normalize using two methods: <code>log10</code>, and
-<code>mean_divide</code>. Then, calculate Otsu discordance metrics.</p>
+<p>Here I normalize using the transformation:
+<code>log10mean_divide</code>. Then, I calculate Otsu discordance
+metrics.</p>
 <pre class="r"><code>mx_norm = mx_normalize(mx_data,
                        transform = &quot;log10_mean_divide&quot;,
                        method = &quot;None&quot;)
@@ -428,65 +818,68 @@ forward:</p>
 # Otsu
 mx_norm = run_otsu_discordance(mx_norm,
                             table=&quot;both&quot;,
-                            thresold_override=NULL,
-                            plot_out = FALSE)
-
-# umap
-mx_norm = run_reduce_umap(mx_norm,
-                          table=&quot;both&quot;,
-                          marker_list = mx_data$marker_cols,
-                          downsample_pct = .1,
-                          metadata_cols = mx_data$metadata_cols)
-</code></pre>
+                            plot_out = FALSE)</code></pre>
 <p>Summary table that calculates the metrics from the Bioinformatics
 paper is printed below</p>
 <pre class="r"><code># calculate metrics for unnormalized and normalized data
-summary(mx_norm)</code></pre>
+summary(mx_norm)
+## Call:
+## `mx_dataset` object with 20 slide(s), 7 marker column(s), and 6 metadata column(s)
+## 
+## Normalization:
+## Data normalized with transformation=`log10_mean_divide` and method=`None`
+## 
+## Anderson-Darling tests:
+##       table mean_test_statistic mean_std_test_statistic mean_p_value
+##  normalized              61.595                  12.905            0
+##         raw             145.471                  38.316            0
+## 
+## Threshold discordance scores:
+##       table mean_discordance sd_discordance
+##  normalized            0.032          0.034
+##         raw            0.091          0.102</code></pre>
 </div>
 <div id="plotting" class="section level3">
 <h3>Plotting</h3>
 <p>First, density plots. Only showing density plots for unnormalized
 cells for two types of immune markers and 3 subjects.</p>
 <pre class="r"><code>set.seed(103001)
-ids = sample(unique(cell_level_lung$slide_id), 3)
+ids = sample(unique(lung_df$patient_id), 3)
 markers = c(&quot;cd19&quot;, &quot;cd14&quot;)
-mx_df = mx_data$data %&gt;%
-  pivot_longer(cd19:dapi, names_to = &quot;marker&quot;, values_to = &quot;marker_value&quot;) %&gt;%
-  filter(slide_id %in% ids)
+
+mx_df = mx_norm$data %&gt;%
+  mutate(cd14_norm = mx_norm$norm_data$cd14) %&gt;%
+  dplyr::select(patient_id, image_id, cd14, cd14_norm) %&gt;%
+  pivot_longer(cd14:cd14_norm, 
+               names_to = &quot;marker&quot;, 
+               values_to = &quot;marker_value&quot;) %&gt;%
+  filter(patient_id %in% ids)
   
   
-cd14 = mx_df %&gt;% 
-    filter(marker %in% c(&quot;cd14&quot;)) %&gt;%
-    ggplot() +
-  geom_line(stat = &quot;density&quot;, aes(marker_value, group = sample_id, color = slide_id), 
+mx_df %&gt;% 
+  ggplot() +
+  geom_line(stat = &quot;density&quot;, aes(marker_value, group = image_id, 
+                                  color = patient_id), 
             alpha=0.5, linetype = 2) +
-    geom_density(aes(marker_value, group = slide_id,
-                   color = slide_id), size = 1.25) +
+    geom_density(aes(marker_value, group = patient_id,
+                   color = patient_id), size = 1.25) +
   scale_color_viridis(discrete = TRUE) +
-  facet_wrap(~marker, scales = &quot;free&quot;, ncol = 1) +
-  theme(legend.position = &quot;none&quot;) +
+  facet_wrap(~marker) +
+  #theme(legend.position = &quot;none&quot;) +
   xlim(0, 1) +
   labs(x = &quot;&quot;)
-
-
-cd19 = mx_df %&gt;%
-  filter(marker %in% c(&quot;cd19&quot;)) %&gt;%
-  ggplot() +
-  geom_line(stat = &quot;density&quot;, aes(marker_value, group = sample_id, color = slide_id), 
-            alpha=0.5, linetype = 2) +
-    geom_density(aes(marker_value, group = slide_id,
-                   color = slide_id), size = 1.25) +
-  scale_color_viridis(discrete = TRUE) +
-  facet_wrap(~marker, scales = &quot;free&quot;, ncol = 1) +
-  theme(legend.position = &quot;none&quot;) +
-  xlim(0, 0.5) +
-  labs(x = &quot;marker value&quot;)
-
-cd14 / cd19</code></pre>
+## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## ℹ Please use `linewidth` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+## Warning: Removed 2261 rows containing non-finite values (`stat_density()`).
+## Removed 2261 rows containing non-finite values (`stat_density()`).</code></pre>
+<p><img src="MI_normalization_files/figure-html/density_mxnorm-1.png" width="90%" /></p>
 <p>Discordance plots. Show for subset of markers and maybe subset of
 subjects.</p>
 <pre class="r"><code>set.seed(103001)
-ids = sample(unique(cell_level_lung$slide_id), 15)
+ids = sample(unique(lung_df$patient_id), 15)
 
 otsu_data = mx_norm$otsu_data %&gt;%
   filter(marker %in% c(&quot;cd14&quot;, &quot;cd19&quot;, &quot;cd8&quot;, &quot;cd3&quot;, &quot;dapi&quot;, &quot;ck&quot;),
@@ -510,79 +903,21 @@ otsu_data %&gt;%
              shape = 23, size = point_size) +
   labs(x = &quot;discordance score&quot;, y = &quot;slide_id&quot;)
 </code></pre>
-<pre class="r"><code>rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
-## object &#39;mx_data&#39; not found
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
+<pre class="r"><code>rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)
+## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
 ## object &#39;mean_vals&#39; not found
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
+## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
 ## object &#39;otsu_data&#39; not found
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
+## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
 ## object &#39;discordance_score&#39; not found
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
-## object &#39;ids&#39; not found
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
-## object &#39;markers&#39; not found
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
-## object &#39;point_size&#39; not found
-## Warning in rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, :
-## object &#39;mx_df&#39; not found</code></pre>
+## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
+## object &#39;point_size&#39; not found</code></pre>
 </div>
-</div>
-<div id="phenotyping" class="section level2">
-<h2>Phenotyping</h2>
-<p>Add in phenograph plots. Clustering using normalized marker values
-for a single subject.</p>
-<p>Now using normalized marker values</p>
-<pre class="r"><code>norm_df = mx_norm$norm_data %&gt;%
-  filter(slide_id == &quot;#01 0-889-121&quot;) %&gt;%
-  dplyr::select(cd19, cd3, cd14, cd8, ck, contains(&quot;phenotype&quot;)) %&gt;%
-  mutate(phenotype = case_when(
-    phenotype_cd14 == &quot;CD14+&quot; ~ &quot;CD14+&quot;,
-    phenotype_cd19 == &quot;CD19+&quot; ~ &quot;CD19+&quot;,
-    phenotype_cd8 == &quot;CD8+&quot; ~ &quot;CD8+&quot;,
-    phenotype_ck == &quot;CK+&quot; ~ &quot;CK+&quot;,
-    TRUE ~ &quot;other&quot;
-  ))
-  
-
-norm_df = na.omit(norm_df)
-norm_df_mat = as.matrix(norm_df[, 1:5])
-
-
-# tsne 
-set.seed(234232)
-tsne_results = Rtsne(norm_df_mat, dims = 2,check_duplicates = FALSE)
-norm_df$tsne1 = tsne_results$Y[,1]  
-norm_df$tsne2 = tsne_results$Y[,2]
-
-# phenograph
-phen_results = Rphenograph(norm_df_mat, k = 100)
-norm_df$phenograph_cluster &lt;- factor(membership(phen_results[[2]]))
-</code></pre>
-<pre class="r"><code>Number of clusters normalize is `r length(unique(norm_df$phenograph_cluster))`</code></pre>
-<p>Plotted results for unnormalized phenograph labels, normalized
-phenograph labels, and Inform labels.</p>
-<pre class="r"><code>p1 = norm_df %&gt;%
-  ggplot(aes(tsne1, tsne2, color = phenotype)) +
-  geom_point(alpha = 0.5, size = 0.75) +
-  labs(x = &quot;TSNE 1&quot;, y = &quot;TSNE 2&quot;, title = &quot;Inform&quot;) +
-  theme(legend.position = c(.1, .25),
-        legend.title = element_blank())
-
-p2 = norm_df %&gt;%
-  ggplot(aes(tsne1, tsne2, color = phenograph_cluster)) +
-  geom_point(alpha = 0.5, size = 0.75) +
-  labs(x = &quot;TSNE 1&quot;, y = &quot;&quot;, title = &quot;Phenograph&quot;) +
-  theme(legend.position = &quot;none&quot;)
-
-p1 + p2 </code></pre>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>
 <ul>
-<li><a
-href="https://link.springer.com/protocol/10.1007/978-1-0716-2986-4_8">textbook
+<li><a href="http://juliawrobel.com/Downloads/mIF_chapter.pdf">textbook
 chapter, Wrobel and Vandekar</a></li>
 <li><a href="https://www.mdpi.com/2072-6694/13/12/3031">Challenges and
 Opportunities in the Statistical Analysis of Multiplex
@@ -607,7 +942,7 @@ href="https://www.akoyabio.com/phenoimager/software/inform-tissue-finder/">inFor
 (proprietary) software</a></li>
 </ul>
 </div>
-<div id="phenotyping-1" class="section level3">
+<div id="phenotyping" class="section level3">
 <h3>Phenotyping</h3>
 <ul>
 <li><a
@@ -621,6 +956,10 @@ phenotyping for MIBI images</a></li>
 <li><a
 href="https://www.biorxiv.org/content/10.1101/2022.10.20.510630v1.full.pdf">CU-Anschutz
 pixel-based platform independent phenotyping</a></li>
+<li><a href="https://pubmed.ncbi.nlm.nih.gov/35654951/">CELESTA, nature
+methods</a></li>
+<li><a href="https://arxiv.org/abs/2110.13074">Gamma mixture models for
+phenotyping</a></li>
 </ul>
 </div>
 <div id="normalization-1" class="section level3">

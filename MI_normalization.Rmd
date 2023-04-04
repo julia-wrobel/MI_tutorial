@@ -34,17 +34,22 @@ Load data and libraries.
 
 ```{r}
 library(tidyverse)
+library(viridis)
 library(patchwork)
 
 # load processed lung cancer data
 load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA"))
+
+# for computational reasons, I will perform on a subset of the data with 20 subjects
+ids = sample(unique(lung_df$patient_id), 20)
+lung_df  = lung_df %>% filter(patient_id %in% ids)
 ```
 
 
 
 ## Normalization
 
-I will use the `mxnorm` package to normalize the lung data. 
+I will use the `mxnorm` package to normalize the lung data. More examples are available in the package vignette.
 
 ### Setting up `mx_dataset` object
 
@@ -115,7 +120,6 @@ mx_norm = mx_normalize(mx_data,
 # Otsu
 mx_norm = run_otsu_discordance(mx_norm,
                             table="both",
-                            thresold_override=NULL,
                             plot_out = FALSE)
 
 ```
@@ -132,43 +136,34 @@ summary(mx_norm)
 
 First, density plots. Only showing density plots for unnormalized cells for two types of immune markers and 3 subjects.
 
-```{r density_mxnorm,eval = FALSE}
+```{r density_mxnorm}
 set.seed(103001)
-ids = sample(unique(cell_level_lung$slide_id), 3)
+ids = sample(unique(lung_df$patient_id), 3)
 markers = c("cd19", "cd14")
-mx_df = mx_data$data %>%
-  pivot_longer(cd19:dapi, names_to = "marker", values_to = "marker_value") %>%
-  filter(slide_id %in% ids)
+
+mx_df = mx_norm$data %>%
+  mutate(cd14_norm = mx_norm$norm_data$cd14) %>%
+  dplyr::select(patient_id, image_id, cd14, cd14_norm) %>%
+  pivot_longer(cd14:cd14_norm, 
+               names_to = "marker", 
+               values_to = "marker_value") %>%
+  filter(patient_id %in% ids)
   
   
-cd14 = mx_df %>% 
-    filter(marker %in% c("cd14")) %>%
-    ggplot() +
-  geom_line(stat = "density", aes(marker_value, group = sample_id, color = slide_id), 
+mx_df %>% 
+  ggplot() +
+  geom_line(stat = "density", aes(marker_value, group = image_id, 
+                                  color = patient_id), 
             alpha=0.5, linetype = 2) +
-    geom_density(aes(marker_value, group = slide_id,
-                   color = slide_id), size = 1.25) +
+    geom_density(aes(marker_value, group = patient_id,
+                   color = patient_id), size = 1.25) +
   scale_color_viridis(discrete = TRUE) +
-  facet_wrap(~marker, scales = "free", ncol = 1) +
-  theme(legend.position = "none") +
+  facet_wrap(~marker) +
+  #theme(legend.position = "none") +
   xlim(0, 1) +
   labs(x = "")
 
 
-cd19 = mx_df %>%
-  filter(marker %in% c("cd19")) %>%
-  ggplot() +
-  geom_line(stat = "density", aes(marker_value, group = sample_id, color = slide_id), 
-            alpha=0.5, linetype = 2) +
-    geom_density(aes(marker_value, group = slide_id,
-                   color = slide_id), size = 1.25) +
-  scale_color_viridis(discrete = TRUE) +
-  facet_wrap(~marker, scales = "free", ncol = 1) +
-  theme(legend.position = "none") +
-  xlim(0, 0.5) +
-  labs(x = "marker value")
-
-cd14 / cd19
 ```
 
 
@@ -176,7 +171,7 @@ Discordance plots. Show for subset of markers and maybe subset of subjects.
 
 ```{r discordance_mxnorm, eval = FALSE}
 set.seed(103001)
-ids = sample(unique(cell_level_lung$slide_id), 15)
+ids = sample(unique(lung_df$patient_id), 15)
 
 otsu_data = mx_norm$otsu_data %>%
   filter(marker %in% c("cd14", "cd19", "cd8", "cd3", "dapi", "ck"),
@@ -203,78 +198,8 @@ otsu_data %>%
 ```
 
 ```{r}
-rm(mx_data, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)
+rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)
 ```
-
-
-
-
-
-
-
-## Phenotyping
-
-Add in phenograph plots. Clustering using normalized marker values for a single subject. 
-
-
-Now using normalized marker values
-
-```{r phenograph_norm, eval = FALSE}
-norm_df = mx_norm$norm_data %>%
-  filter(slide_id == "#01 0-889-121") %>%
-  dplyr::select(cd19, cd3, cd14, cd8, ck, contains("phenotype")) %>%
-  mutate(phenotype = case_when(
-    phenotype_cd14 == "CD14+" ~ "CD14+",
-    phenotype_cd19 == "CD19+" ~ "CD19+",
-    phenotype_cd8 == "CD8+" ~ "CD8+",
-    phenotype_ck == "CK+" ~ "CK+",
-    TRUE ~ "other"
-  ))
-  
-
-norm_df = na.omit(norm_df)
-norm_df_mat = as.matrix(norm_df[, 1:5])
-
-
-# tsne 
-set.seed(234232)
-tsne_results = Rtsne(norm_df_mat, dims = 2,check_duplicates = FALSE)
-norm_df$tsne1 = tsne_results$Y[,1]  
-norm_df$tsne2 = tsne_results$Y[,2]
-
-# phenograph
-phen_results = Rphenograph(norm_df_mat, k = 100)
-norm_df$phenograph_cluster <- factor(membership(phen_results[[2]]))
-
-
-```
-
- 
-```{r, eval = FALSE}
-Number of clusters normalize is `r length(unique(norm_df$phenograph_cluster))`
-```
- 
-
-Plotted results for unnormalized phenograph labels, normalized phenograph labels, and Inform labels.
-
-```{r phenograph_plot, fig.width = 10, eval = FALSE}
-p1 = norm_df %>%
-  ggplot(aes(tsne1, tsne2, color = phenotype)) +
-  geom_point(alpha = 0.5, size = 0.75) +
-  labs(x = "TSNE 1", y = "TSNE 2", title = "Inform") +
-  theme(legend.position = c(.1, .25),
-        legend.title = element_blank())
-
-p2 = norm_df %>%
-  ggplot(aes(tsne1, tsne2, color = phenograph_cluster)) +
-  geom_point(alpha = 0.5, size = 0.75) +
-  labs(x = "TSNE 1", y = "", title = "Phenograph") +
-  theme(legend.position = "none")
-
-p1 + p2 
-```
-
-
 
 
 
