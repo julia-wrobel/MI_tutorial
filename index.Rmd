@@ -3,7 +3,72 @@ title: "A short course on multiplex single-cell imaging in R"
 ---
 
 
-This page contains materials by [Julia Wrobel](http://juliawrobel.com/) for the short course titled "A workshop for analysis of multiplex single-cell imaging data in R" held at the University of Michigan on April 6, 2023.
+This page contains materials by [Julia Wrobel](http://juliawrobel.com/) for the short course titled "A workshop for analysis of multiplex single-cell imaging data in R" held at the University of Michigan Department of Biostatistics on April 6, 2023.
+
+``
+``
+``
+``
+
+### Acknowledgements 
+
+This work wouldn't be possible without great collaborators at several institutions, including:
+
+``
+``
+``
+``
+
+#### University of Colorado Anschutz Medical Center
+
+**Department of Biostatistics Multiplex Imaging Group**
+
+* Debashis Ghosh
+* Thao Vu
+* Souvik Seal
+* Tushar Ghosh
+* Mansooreh Ahmadian
+* Ben Steinhart
+
+**School of Medicine**
+
+* Kimberly R Jordan
+* Elena Hsieh
+* Josh Thurman
+* Benjamin G Bitler
+* Christian Rickert
+* Erin Schenk
 
 
-Acknowledgements here.
+``
+``
+``
+``
+
+#### Vanderbilt Biostatistics Statistical Imaging Collective
+
+* Simon Vandekar
+* Coleman Harris
+
+
+``
+``
+``
+``
+
+#### Moffitt Cancer Center
+
+* Brooke Fridley
+* Alex Soupir
+* Jose Laborde
+
+
+``
+``
+``
+``
+
+#### Johns Hopkins Data Science Lab
+
+* Stephanie Hicks
+* Lukas Weber
