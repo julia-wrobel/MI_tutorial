@@ -88,7 +88,7 @@ mx_data = mx_dataset(data = lung_df,
                                        "phenotype_cd19"))
 
 
-
+class(mx_data)
 summary(mx_data)
 ```
 
@@ -103,8 +103,7 @@ knitr::kable(head(mx_data$data))  %>%
 
 ### Normalize using `mx_normalize()`
 
-Normalize using two methods: `log10`, and `mean_divide`. Then, calculate Otsu discordance metrics.
-
+Here I normalize using the transformation: `log10mean_divide`. Then, I calculate Otsu discordance metrics.
 
 
 ```{r mxnorm}
@@ -119,19 +118,12 @@ mx_norm = run_otsu_discordance(mx_norm,
                             thresold_override=NULL,
                             plot_out = FALSE)
 
-# umap
-mx_norm = run_reduce_umap(mx_norm,
-                          table="both",
-                          marker_list = mx_data$marker_cols,
-                          downsample_pct = .1,
-                          metadata_cols = mx_data$metadata_cols)
-
 ```
 
 
 Summary table that calculates the metrics from the Bioinformatics paper is printed below
 
-```{r mxnorm_stats, eval = FALSE}
+```{r mxnorm_stats}
 # calculate metrics for unnormalized and normalized data
 summary(mx_norm)
 ```
@@ -288,7 +280,7 @@ p1 + p2
 
 ## References
 
-* [textbook chapter, Wrobel and Vandekar](https://link.springer.com/protocol/10.1007/978-1-0716-2986-4_8)
+* [textbook chapter, Wrobel and Vandekar](http://juliawrobel.com/Downloads/mIF_chapter.pdf)
 * [Challenges and Opportunities in the Statistical Analysis of Multiplex Immunofluorescence Data](https://www.mdpi.com/2072-6694/13/12/3031)
 
 ### Segmentation
