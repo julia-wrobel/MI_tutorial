@@ -236,7 +236,7 @@ cell_level_lung <- as_tibble(cbind(colData_df,
                 hladr = hladr_opal_690,
                 ck = ck_opal_570) %>%
   dplyr::select(cd14:sample_id, slide_id:tissue_category, cell_id,
-                entire_cell_axis_ratio:entire_cell_area_square_microns)
+                entire_cell_axis_ratio:entire_cell_area_square_microns, contains("phenotype"))
 
 
 

@@ -25,30 +25,53 @@ knitr::opts_chunk$set(
 
 <iframe class="speakerdeck-iframe" frameborder="0" src="https://speakerdeck.com/player/ccecd0548b874505b4bdd80172769ffe" title="MI_normalization" allowfullscreen="true" style="border: 0px; background: padding-box padding-box rgba(0, 0, 0, 0.1); margin: 0px; padding: 0px; border-radius: 6px; box-shadow: rgba(0, 0, 0, 0.2) 0px 5px 40px; width: 100%; height: auto; aspect-ratio: 560 / 314;" data-ratio="1.78343949044586"></iframe>
 
+
+## Overview
+
+This module performs and evaluates intensity normalization using the `mxnorm` package.
+
+Load data and libraries.
+
+```{r}
+library(tidyverse)
+library(patchwork)
+
+# load processed lung cancer data
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA"))
+```
+
+
+
 ## Normalization
 
-As an illustrative example will use the `mxnorm` package to normalize the lung data. 
+I will use the `mxnorm` package to normalize the lung data. 
 
 ### Setting up `mx_dataset` object
 
- Use `slide_id` as slide identifier
-- Use `sample_id` as image identifier
-- Use the following marker columns:
-    - `cd19`
-    - `cd14`
-    - `cd3`
-    - `cd8`
-    - `hladr`
-    - `ck`
-    - `dapi`
-- Use `tissue_category` as a metadata column
+The `mxnorm` package uses an S3 object-oriented framework in R to define an mx_dataset which all operations are performed on.
+
+* Use `patient_id` as slide identifier
+* Use `image_id` as image identifier
+* Use the following marker columns:
+  * `cd19`
+  * `cd14`
+  * `cd3`
+  * `cd8`
+  * `hladr`
+  * `ck`
+  * `dapi`
+* Use `tissue_category` as a metadata column
 
 
-```{r, eval = FALSE}
+```{r}
+# load the package
+# install.packages("mxnorm")
+library(mxnorm)
 
-mx_data = mx_dataset(data = cell_level_lung,
-                     slide_id = "slide_id",
-                     image_id = "sample_id",
+# define the mx_dataset
+mx_data = mx_dataset(data = lung_df,
+                     slide_id = "patient_id",
+                     image_id = "image_id",
                      marker_cols = c("cd19",
                                      "cd3",
                                      "cd14",
@@ -57,8 +80,12 @@ mx_data = mx_dataset(data = cell_level_lung,
                                      "ck",
                                      "dapi"
                                      ),
-                     metadata_cols = c("tissue_category", "phenotype_ck", "phenotype_cd8", "phenotype_cd14",
-                                       "phenotype_other", "phenotype_cd19"))
+                     metadata_cols = c("tissue_category", 
+                                       "phenotype_ck", 
+                                       "phenotype_cd8", 
+                                       "phenotype_cd14",
+                                       "phenotype_other", 
+                                       "phenotype_cd19"))
 
 
 
@@ -68,7 +95,7 @@ summary(mx_data)
 
 And let's look at the data object we're going to use going forward:
 
-```{r, eval = FALSE}
+```{r}
 knitr::kable(head(mx_data$data))  %>%
     kableExtra::kable_styling() %>% kableExtra::scroll_box(width = "100%")
 ```
@@ -80,7 +107,7 @@ Normalize using two methods: `log10`, and `mean_divide`. Then, calculate Otsu di
 
 
 
-```{r mxnorm, eval = FALSE}
+```{r mxnorm}
 mx_norm = mx_normalize(mx_data,
                        transform = "log10_mean_divide",
                        method = "None")
@@ -273,16 +300,19 @@ p1 + p2
 * [Halo (proprietary) software](https://indicalab.com/halo/)
 * [inForm (proprietary) software](https://www.akoyabio.com/phenoimager/software/inform-tissue-finder/)
 
+
 ### Phenotyping
 
 * [Astir](https://www.sciencedirect.com/science/article/pii/S2405471221003355)
 * [Evaluation of clustering algorithms on Vectra and MIBI data](https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-022-06097-x)
 * [MAUI phenotyping for MIBI images](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008887)
 * [CU-Anschutz pixel-based platform independent phenotyping](https://www.biorxiv.org/content/10.1101/2022.10.20.510630v1.full.pdf)
+* [CELESTA, nature methods](https://pubmed.ncbi.nlm.nih.gov/35654951/)
+* [Gamma mixture models for phenotyping](https://arxiv.org/abs/2110.13074)
 
 ### Normalization
 
 
 * [Python-based pipeline](https://www.nature.com/articles/s42003-022-03368-y)
-* [mxnorm package](https://joss.theoj.org/papers/10.21105/joss.04180.pdf)
+* [mxnorm package](https://joss.theoj.org/papers/10.21105/joss.04180.pdf) 
 * [Methods behind mxnorm](https://academic.oup.com/bioinformatics/article/38/6/1700/6496920)
