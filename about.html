@@ -304,15 +304,25 @@ href="http://rmarkdown.rstudio.com/rmarkdown_websites.html">R Markdown
 website</a>, created by <a href="http://juliawrobel.com">Julia
 Wrobel</a> for a multiplex single-cell imaging data workshop at the
 University of Michigan Department of Biostatistics.</p>
-<p>In the short course, we’ll actively use the <code>refund</code>
-packages, and sometimes will use <code>refund.shiny</code> and
-<code>tidyverse</code>. Code to install the packages follows, and
-version information about each of these packages and their dependencies
-is at the bottom of this page.</p>
-<pre class="r"><code>install.packages(c(&quot;tidyverse&quot;, &quot;refund&quot;))</code></pre>
+<p>In the short course, we’ll actively use several packages which are
+listed below. Code to install the packages follows, and version
+information about each of these packages and their dependencies is at
+the bottom of this page.</p>
+<p>Installing packages from CRAN</p>
+<pre class="r"><code>install.packages(c(&quot;tidyverse&quot;, &quot;spatstat&quot;, &quot;spatialTIME&quot;, &quot;mxnorm&quot;,&quot;refund&quot;,
+                   &quot;refund.shiny&quot;))</code></pre>
+<p>Installing packages from Bioconductor</p>
+<pre class="r"><code># install Bioconductor
+BiocManager::install(version = &quot;3.16&quot;)
+
+# VectraPolarisData
+BiocManager::install(&quot;VectraPolarisData&quot;)
+
+# EBImage
+BiocManager::install(&quot;EBImage&quot;)</code></pre>
 <p>Versions of key packages:</p>
 <pre class="r"><code>devtools::session_info(c(&quot;tidyverse&quot;, &quot;VectraPolarisData&quot;, &quot;spatstat&quot;, &quot;spatialTIME&quot;, &quot;refund&quot;))</code></pre>
-<pre><code>## ─ Session info ───────────────────────
+<pre><code>## ─ Session info ───────────────────────────────────────────────────────────────
 ##  setting  value
 ##  version  R version 4.2.3 (2023-03-15)
 ##  os       macOS Big Sur ... 10.16
@@ -322,10 +332,10 @@ is at the bottom of this page.</p>
 ##  collate  en_US.UTF-8
 ##  ctype    en_US.UTF-8
 ##  tz       America/Denver
-##  date     2023-04-03
+##  date     2023-04-04
 ##  pandoc   2.19.2 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/ (via rmarkdown)
 ## 
-## ─ Packages ───────────────────────────
+## ─ Packages ───────────────────────────────────────────────────────────────────
 ##  package                * version   date (UTC) lib source
 ##  abind                    1.4-5     2016-07-21 [1] CRAN (R 4.2.0)
 ##  AnnotationDbi            1.60.2    2023-03-10 [1] Bioconductor
@@ -566,7 +576,7 @@ is at the bottom of this page.</p>
 ## 
 ##  [1] /Library/Frameworks/R.framework/Versions/4.2/Resources/library
 ## 
-## ──────────────────────────────────────</code></pre>
+## ──────────────────────────────────────────────────────────────────────────────</code></pre>
 
 
 
