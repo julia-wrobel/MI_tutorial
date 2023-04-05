@@ -21,7 +21,7 @@ I want to acknowledge the following collaborators, without whom this work wouldn
 
 * Debashis Ghosh
 * Thao Vu
-* Souvik Seal
+* [Souvik Seal](https://sealx017.github.io/)
 * Tushar Ghosh
 * Mansooreh Ahmadian
 * Ben Steinhart
@@ -40,7 +40,7 @@ I want to acknowledge the following collaborators, without whom this work wouldn
 #### Vanderbilt Biostatistics Statistical Imaging Collective
 
 * [Simon Vandekar](https://simonvandekar.bitbucket.io/)
-* Coleman Harris
+* [Coleman Harris](https://colemanrharris.me/)
 
 
 <br>

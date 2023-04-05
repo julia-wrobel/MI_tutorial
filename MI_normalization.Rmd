@@ -51,7 +51,7 @@ lung_df  = lung_df %>% filter(patient_id %in% ids)
 
 ## Normalization
 
-We will use the `mxnorm` package to normalize the lung data. More examples for working with this package are available in the package vignette.
+We will use the `mxnorm` package to normalize the lung data. More examples for working with this package are available in the [package vignette](https://cran.r-project.org/web/packages/mxnorm/vignettes/mxnorm-vignette.html).
 
 ### Setting up `mx_dataset` object
 
@@ -198,13 +198,7 @@ otsu_data %>%
 
 
 
-
-
-
-```{r}
-rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)
-```
-
+It is also possible to evaluate user-defined normalization using the `mxnorm` package. See [here](https://cran.r-project.org/web/packages/mxnorm/vignettes/mxnorm-vignette.html#user-defined-normalization) in the package vignette for an example.
 
 
 ## References
