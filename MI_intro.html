@@ -383,49 +383,31 @@ imaging data</h1>
 </div>
 <div id="overview" class="section level2">
 <h2>Overview</h2>
-<p>Below I briefly talk about loading and visualizing raw TIFF data. The
-rest of the workshop will focus on data in tabular form post
+<p>In this module I briefly discuss loading and visualizing raw TIFF
+data. The rest of the workshop will focus on data in tabular form post
 segmentation.</p>
 <div id="lung-cancer-data" class="section level3">
 <h3>Lung cancer data</h3>
-<p>Below I do some exploratory data analysis with multichannel tiff
-files from a Vectra instrument. We are looking at a tissue slice from a
-patient with non small cell lung carcinoma from one of the datasets
-available in the <code>VectraPolarisData</code> package.</p>
-<p>Cell and tissue segmentation and cell phenotyping were performed
-using inForm software. For each image, there are multiple Tiff
-files:</p>
+<p>The following image is a single ROI from a tissue slice from a
+patient with non small cell lung carcinoma.Cell and tissue segmentation
+and cell phenotyping were performed using <a
+href="https://www.akoyabio.com/phenoimager/software/inform-tissue-finder/">inForm</a>
+software. For each image, there are multiple Tiff files output by
+inForm:</p>
 <ul>
 <li><code>*component_data.tif</code>: the multichannel file we are most
 interested in</li>
 <li><code>*binary_sig*</code>: 3 channel file with binary segmentation
 maps</li>
-<li><code>"subject_id".tif</code>: A composite image in RGB format.
-Makes pretty pictures.</li>
+<li><code>"subject_id".tif</code>: A composite image in RGB format.</li>
 </ul>
 <pre class="r"><code>
 #BiocManager::install(&quot;EBImage&quot;)
 
 # load relevant libraries
 library(tidyverse)
-## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.1     ✔ readr     2.1.4
-## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-## ✔ ggplot2   3.4.1     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
-## ✔ purrr     1.0.1     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors
 library(tiff)
 library(EBImage)
-## 
-## Attaching package: &#39;EBImage&#39;
-## 
-## The following object is masked from &#39;package:purrr&#39;:
-## 
-##     transpose
 
 
 # define your specific file path

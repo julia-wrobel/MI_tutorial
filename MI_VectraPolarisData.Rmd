@@ -75,7 +75,7 @@ The object stores the following marker values for each marker and each cell
 
 * `intensities`: mean marker intensity for entire cell
 * `nucleus_intensities`: mean marker intensity in the nucleus
-* `membraine_intensities`: mean marker intensity in the cell membrane
+* `membrane_intensities`: mean marker intensity in the cell membrane
 
 ```{r}
 assayNames(oc)

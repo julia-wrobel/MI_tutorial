@@ -13,7 +13,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   fig.width = 6,
   fig.asp = .6,
-  out.width = "90%"
+  out.width = "90%",
+  message = FALSE
 )
 
 ```
@@ -28,19 +29,16 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-Below I briefly talk about loading and visualizing raw TIFF data. The rest of the workshop will focus on data in tabular form post segmentation.
+In this module I briefly discuss loading and visualizing raw TIFF data. The rest of the workshop will focus on data in tabular form post segmentation.
 
 ### Lung cancer data
 
-Below I do some exploratory data analysis with multichannel tiff files from a Vectra instrument. We are looking at a tissue slice from a patient with non small cell lung carcinoma from one of the datasets available in the `VectraPolarisData` package.
-
-
-Cell and tissue segmentation and cell phenotyping were performed using inForm software. For each image, there are multiple Tiff files:
+The following image is a single ROI from a tissue slice from a patient with non small cell lung carcinoma.Cell and tissue segmentation and cell phenotyping were performed using [inForm](https://www.akoyabio.com/phenoimager/software/inform-tissue-finder/) software. For each image, there are multiple Tiff files output by inForm:
 
 
 * `*component_data.tif`: the multichannel file we are most interested in
 * `*binary_sig*`: 3 channel file with binary segmentation maps
-* `"subject_id".tif`: A composite image in RGB format. Makes pretty pictures.
+* `"subject_id".tif`: A composite image in RGB format. 
 
 
 ```{r}
@@ -62,8 +60,6 @@ binseg =  here::here("Data", "lung_binary_seg_maps.tif")
 composite_tif = here::here("Data", "lung.tif")
 ```
 
-
-The subject and image ID are embedded in the file name. For example, for the file "#12 2-690-981 P44_[48428,17215].tif", "12 2-690-981" is the subject id, and "48428,17215" is the image ID. 
 
 #### Component file
 

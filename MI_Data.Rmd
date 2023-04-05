@@ -25,6 +25,6 @@ This is a segmented and phenotyped multiplex immunoflurescence dataset of non sm
 
 A cleaned version of the data can be found [here](./Data/lung.RDA).
 
-An example multichannel tiff image can be found [here](lung_component_data.tif), with binary segmentation maps [here](lung_binary_seg_maps.tif), and a composite image [here](lung.tif).
+An example multichannel tiff image can be found [here](./Data/lung_component_data.tif), with binary segmentation maps [here](./Data/lung_binary_seg_maps.tif), and a composite image [here](./Data/lung.tif).
 
 
