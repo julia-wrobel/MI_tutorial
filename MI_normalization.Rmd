@@ -38,7 +38,7 @@ library(viridis)
 library(patchwork)
 
 # load processed lung cancer data
-load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA"))
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/lung.RDA"))
 
 # for computational reasons, I will perform on a subset of the data with 20 subjects
 ids = sample(unique(lung_df$patient_id), 20)

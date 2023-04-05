@@ -40,7 +40,7 @@ library(tidyverse)
 library(patchwork)
 
 # load processed ovarian cancer data
-load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA"))
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/ovarian.RDA"))
 ```
 
 

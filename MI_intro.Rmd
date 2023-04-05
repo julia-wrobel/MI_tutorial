@@ -54,12 +54,12 @@ library(EBImage)
 
 
 # define your specific file path
-my_path = here::here("DataCode")
+my_path = here::here("Data")
 
 # define file for different .tif files
-component = here::here("DataCode", "lung_component_data.tif") 
-binseg =  here::here("DataCode", "lung_binary_seg_maps.tif")
-composite_tif = here::here("DataCode", "lung.tif")
+component = here::here("Data", "lung_component_data.tif") 
+binseg =  here::here("Data", "lung_binary_seg_maps.tif")
+composite_tif = here::here("Data", "lung.tif")
 ```
 
 

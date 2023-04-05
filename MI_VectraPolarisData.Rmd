@@ -276,14 +276,14 @@ Processed data are saved as `.rda` objects and can also be downloaded directly f
 
 ```{r, eval = FALSE}
 # save data sets
-save(ovarian_df, file = here::here("DataCode", "ovarian.RDA"))
-save(lung_df, file = here::here("DataCode", "lung.RDA"))
+save(ovarian_df, file = here::here("Data", "ovarian.RDA"))
+save(lung_df, file = here::here("Data", "lung.RDA"))
 
 # load processed ovarian data
-load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA"))
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/ovarian.RDA"))
 
 # load processed lung data
-load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA"))
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/lung.RDA"))
 ```
 
 

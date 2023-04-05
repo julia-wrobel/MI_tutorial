@@ -43,7 +43,7 @@ library(refund)
 library(refund.shiny)
 
 # load processed ovarian cancer data from GitHub
-load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA"))
+load(url("https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/ovarian.RDA"))
 ```
 
 ## Regression with patient level outcomes
