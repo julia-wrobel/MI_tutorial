@@ -13,7 +13,9 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   fig.width = 6,
   fig.asp = .6,
-  out.width = "90%"
+  out.width = "90%",
+  message = FALSE,
+  warning = FALSE
 )
 
 ```
@@ -28,7 +30,7 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-This module performs and evaluates intensity normalization using the `mxnorm` package.
+This module performs and evaluates intensity normalization on images from the lung cancer dataset using the `mxnorm` package.
 
 Load data and libraries.
 
@@ -49,7 +51,7 @@ lung_df  = lung_df %>% filter(patient_id %in% ids)
 
 ## Normalization
 
-I will use the `mxnorm` package to normalize the lung data. More examples are available in the package vignette.
+We will use the `mxnorm` package to normalize the lung data. More examples for working with this package are available in the package vignette.
 
 ### Setting up `mx_dataset` object
 
@@ -98,17 +100,10 @@ summary(mx_data)
 ```
 
 
-And let's look at the data object we're going to use going forward:
-
-```{r}
-knitr::kable(head(mx_data$data))  %>%
-    kableExtra::kable_styling() %>% kableExtra::scroll_box(width = "100%")
-```
-
 
 ### Normalize using `mx_normalize()`
 
-Here I normalize using the transformation: `log10mean_divide`. Then, I calculate Otsu discordance metrics.
+Here we normalize using the transformation: `log10mean_divide`. Then, we calculate Otsu discordance metrics.
 
 
 ```{r mxnorm}
@@ -125,16 +120,18 @@ mx_norm = run_otsu_discordance(mx_norm,
 ```
 
 
-Summary table that calculates the metrics from the Bioinformatics paper is printed below
+Summary table that calculates the metrics from the Bioinformatics paper is printed below:
 
 ```{r mxnorm_stats}
 # calculate metrics for unnormalized and normalized data
 summary(mx_norm)
 ```
 
+Lower values of these metrics indicate better normalization.
+
 ### Plotting
 
-First, density plots. Only showing density plots for unnormalized cells for two types of immune markers and 3 subjects.
+First, density plots. The code below constructs density plots of normalized and unnormalized CD14 values for 3 subjects.
 
 ```{r density_mxnorm}
 set.seed(103001)
@@ -167,15 +164,17 @@ mx_df %>%
 ```
 
 
-Discordance plots. Show for subset of markers and maybe subset of subjects.
+The next set of plots shows Otsu discordance scores. Otsu thresholds were calculated at
+the slide-level for each marker and compared to a global Otsu threshold for each
+marker to calculate a discordance score.
 
-```{r discordance_mxnorm, eval = FALSE}
-set.seed(103001)
-ids = sample(unique(lung_df$patient_id), 15)
+Discordance scores are plotted for all 20 subjects and 6 markers, both before and after normalization. The white diamond represents the mean discordance score across all
+markers for a given method. Given that this is a discordance score, lower values indicate better agreement across slides.
+
+```{r discordance_mxnorm}
 
 otsu_data = mx_norm$otsu_data %>%
-  filter(marker %in% c("cd14", "cd19", "cd8", "cd3", "dapi", "ck"),
-         slide_id %in% ids) %>%
+  filter(marker %in% c("cd14", "cd19", "cd8", "cd3", "dapi", "ck")) %>%
   mutate(slide_id = as.numeric(factor(slide_id)),
          norm = factor(table, levels = c("raw", "normalized"))) 
 
@@ -196,6 +195,11 @@ otsu_data %>%
   labs(x = "discordance score", y = "slide_id")
 
 ```
+
+
+
+
+
 
 ```{r}
 rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)
@@ -233,3 +237,8 @@ rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, ids, markers, poin
 * [Python-based pipeline](https://www.nature.com/articles/s42003-022-03368-y)
 * [mxnorm package](https://joss.theoj.org/papers/10.21105/joss.04180.pdf) 
 * [Methods behind mxnorm](https://academic.oup.com/bioinformatics/article/38/6/1700/6496920)
+
+### Analysis of functional markers
+
+* [Spatial differential expression](https://www.nature.com/articles/s41592-022-01575-3)
+* [Density variation analsyis of functional markers](https://academic.oup.com/bioinformaticsadvances/article/2/1/vbac039/6590640) 

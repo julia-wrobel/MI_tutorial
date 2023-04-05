@@ -35,8 +35,6 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
-<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.2.1/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.2.1/css/v4-shims.min.css" rel="stylesheet" />
 
@@ -358,7 +356,7 @@ div.tocify {
   <a href="about.html">About</a>
 </li>
 <li>
-  <a href="http://juliawrobel.com/MI_tutorial/">
+  <a href="https://github.com/julia-wrobel/MI_tutorial">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -385,26 +383,15 @@ phenotyping, and normalization</h1>
 </div>
 <div id="overview" class="section level2">
 <h2>Overview</h2>
-<p>This module performs and evaluates intensity normalization using the
-<code>mxnorm</code> package.</p>
+<p>This module performs and evaluates intensity normalization on images
+from the lung cancer dataset using the <code>mxnorm</code> package.</p>
 <p>Load data and libraries.</p>
 <pre class="r"><code>library(tidyverse)
-## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.1     ✔ readr     2.1.4
-## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-## ✔ ggplot2   3.4.1     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
-## ✔ purrr     1.0.1     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors
 library(viridis)
-## Loading required package: viridisLite
 library(patchwork)
 
 # load processed lung cancer data
-load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA&quot;))
+load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/lung.RDA&quot;))
 
 # for computational reasons, I will perform on a subset of the data with 20 subjects
 ids = sample(unique(lung_df$patient_id), 20)
@@ -412,8 +399,9 @@ lung_df  = lung_df %&gt;% filter(patient_id %in% ids)</code></pre>
 </div>
 <div id="normalization" class="section level2">
 <h2>Normalization</h2>
-<p>I will use the <code>mxnorm</code> package to normalize the lung
-data. More examples are available in the package vignette.</p>
+<p>We will use the <code>mxnorm</code> package to normalize the lung
+data. More examples for working with this package are available in the
+package vignette.</p>
 <div id="setting-up-mx_dataset-object" class="section level3">
 <h3>Setting up <code>mx_dataset</code> object</h3>
 <p>The <code>mxnorm</code> package uses an S3 object-oriented framework
@@ -462,353 +450,11 @@ class(mx_data)
 summary(mx_data)
 ## Call:
 ## `mx_dataset` object with 20 slide(s), 7 marker column(s), and 6 metadata column(s)</code></pre>
-<p>And let’s look at the data object we’re going to use going
-forward:</p>
-<pre class="r"><code>knitr::kable(head(mx_data$data))  %&gt;%
-    kableExtra::kable_styling() %&gt;% kableExtra::scroll_box(width = &quot;100%&quot;)</code></pre>
-<div
-style="border: 1px solid #ddd; padding: 5px; overflow-x: scroll; width:100%; ">
-<table class="table" style="margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-patient_id
-</th>
-<th style="text-align:left;">
-image_id
-</th>
-<th style="text-align:right;">
-cd19
-</th>
-<th style="text-align:right;">
-cd3
-</th>
-<th style="text-align:right;">
-cd14
-</th>
-<th style="text-align:right;">
-cd8
-</th>
-<th style="text-align:right;">
-hladr
-</th>
-<th style="text-align:right;">
-ck
-</th>
-<th style="text-align:right;">
-dapi
-</th>
-<th style="text-align:left;">
-tissue_category
-</th>
-<th style="text-align:left;">
-phenotype_ck
-</th>
-<th style="text-align:left;">
-phenotype_cd8
-</th>
-<th style="text-align:left;">
-phenotype_cd14
-</th>
-<th style="text-align:left;">
-phenotype_other
-</th>
-<th style="text-align:left;">
-phenotype_cd19
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-#11 3-499-643
-</td>
-<td style="text-align:left;">
-#11 3-499-643_[38278,7444].im3
-</td>
-<td style="text-align:right;">
-0.099
-</td>
-<td style="text-align:right;">
-0.057
-</td>
-<td style="text-align:right;">
-0.249
-</td>
-<td style="text-align:right;">
-0.144
-</td>
-<td style="text-align:right;">
-0.101
-</td>
-<td style="text-align:right;">
-2.393
-</td>
-<td style="text-align:right;">
-6.423
-</td>
-<td style="text-align:left;">
-Stroma
-</td>
-<td style="text-align:left;">
-CK-
-</td>
-<td style="text-align:left;">
-CD8-
-</td>
-<td style="text-align:left;">
-CD14-
-</td>
-<td style="text-align:left;">
-Other-
-</td>
-<td style="text-align:left;">
-CD19-
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-#11 3-499-643
-</td>
-<td style="text-align:left;">
-#11 3-499-643_[38278,7444].im3
-</td>
-<td style="text-align:right;">
-0.174
-</td>
-<td style="text-align:right;">
-0.060
-</td>
-<td style="text-align:right;">
-0.478
-</td>
-<td style="text-align:right;">
-0.124
-</td>
-<td style="text-align:right;">
-0.191
-</td>
-<td style="text-align:right;">
-3.458
-</td>
-<td style="text-align:right;">
-9.060
-</td>
-<td style="text-align:left;">
-Tumor
-</td>
-<td style="text-align:left;">
-CK+
-</td>
-<td style="text-align:left;">
-CD8-
-</td>
-<td style="text-align:left;">
-CD14-
-</td>
-<td style="text-align:left;">
-Other-
-</td>
-<td style="text-align:left;">
-CD19-
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-#11 3-499-643
-</td>
-<td style="text-align:left;">
-#11 3-499-643_[38278,7444].im3
-</td>
-<td style="text-align:right;">
-0.231
-</td>
-<td style="text-align:right;">
-0.020
-</td>
-<td style="text-align:right;">
-0.134
-</td>
-<td style="text-align:right;">
-0.095
-</td>
-<td style="text-align:right;">
-0.551
-</td>
-<td style="text-align:right;">
-0.525
-</td>
-<td style="text-align:right;">
-5.137
-</td>
-<td style="text-align:left;">
-Stroma
-</td>
-<td style="text-align:left;">
-CK-
-</td>
-<td style="text-align:left;">
-CD8-
-</td>
-<td style="text-align:left;">
-CD14-
-</td>
-<td style="text-align:left;">
-Other+
-</td>
-<td style="text-align:left;">
-CD19-
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-#11 3-499-643
-</td>
-<td style="text-align:left;">
-#11 3-499-643_[38278,7444].im3
-</td>
-<td style="text-align:right;">
-0.318
-</td>
-<td style="text-align:right;">
-0.032
-</td>
-<td style="text-align:right;">
-0.098
-</td>
-<td style="text-align:right;">
-0.097
-</td>
-<td style="text-align:right;">
-0.740
-</td>
-<td style="text-align:right;">
-0.737
-</td>
-<td style="text-align:right;">
-6.041
-</td>
-<td style="text-align:left;">
-Stroma
-</td>
-<td style="text-align:left;">
-CK-
-</td>
-<td style="text-align:left;">
-CD8-
-</td>
-<td style="text-align:left;">
-CD14-
-</td>
-<td style="text-align:left;">
-Other-
-</td>
-<td style="text-align:left;">
-CD19+
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-#11 3-499-643
-</td>
-<td style="text-align:left;">
-#11 3-499-643_[38278,7444].im3
-</td>
-<td style="text-align:right;">
-0.308
-</td>
-<td style="text-align:right;">
-0.048
-</td>
-<td style="text-align:right;">
-0.189
-</td>
-<td style="text-align:right;">
-0.149
-</td>
-<td style="text-align:right;">
-0.775
-</td>
-<td style="text-align:right;">
-0.825
-</td>
-<td style="text-align:right;">
-4.522
-</td>
-<td style="text-align:left;">
-Stroma
-</td>
-<td style="text-align:left;">
-CK-
-</td>
-<td style="text-align:left;">
-CD8-
-</td>
-<td style="text-align:left;">
-CD14-
-</td>
-<td style="text-align:left;">
-Other+
-</td>
-<td style="text-align:left;">
-CD19-
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-#11 3-499-643
-</td>
-<td style="text-align:left;">
-#11 3-499-643_[38278,7444].im3
-</td>
-<td style="text-align:right;">
-0.140
-</td>
-<td style="text-align:right;">
-0.250
-</td>
-<td style="text-align:right;">
-0.600
-</td>
-<td style="text-align:right;">
-0.132
-</td>
-<td style="text-align:right;">
-0.169
-</td>
-<td style="text-align:right;">
-1.335
-</td>
-<td style="text-align:right;">
-7.745
-</td>
-<td style="text-align:left;">
-Stroma
-</td>
-<td style="text-align:left;">
-CK-
-</td>
-<td style="text-align:left;">
-CD8-
-</td>
-<td style="text-align:left;">
-CD14-
-</td>
-<td style="text-align:left;">
-Other-
-</td>
-<td style="text-align:left;">
-CD19-
-</td>
-</tr>
-</tbody>
-</table>
-</div>
 </div>
 <div id="normalize-using-mx_normalize" class="section level3">
 <h3>Normalize using <code>mx_normalize()</code></h3>
-<p>Here I normalize using the transformation:
-<code>log10mean_divide</code>. Then, I calculate Otsu discordance
+<p>Here we normalize using the transformation:
+<code>log10mean_divide</code>. Then, we calculate Otsu discordance
 metrics.</p>
 <pre class="r"><code>mx_norm = mx_normalize(mx_data,
                        transform = &quot;log10_mean_divide&quot;,
@@ -820,7 +466,7 @@ mx_norm = run_otsu_discordance(mx_norm,
                             table=&quot;both&quot;,
                             plot_out = FALSE)</code></pre>
 <p>Summary table that calculates the metrics from the Bioinformatics
-paper is printed below</p>
+paper is printed below:</p>
 <pre class="r"><code># calculate metrics for unnormalized and normalized data
 summary(mx_norm)
 ## Call:
@@ -831,18 +477,19 @@ summary(mx_norm)
 ## 
 ## Anderson-Darling tests:
 ##       table mean_test_statistic mean_std_test_statistic mean_p_value
-##  normalized              61.595                  12.905            0
-##         raw             145.471                  38.316            0
+##  normalized              69.816                  15.396            0
+##         raw             168.201                  45.203            0
 ## 
 ## Threshold discordance scores:
 ##       table mean_discordance sd_discordance
-##  normalized            0.032          0.034
-##         raw            0.091          0.102</code></pre>
+##  normalized            0.039          0.043
+##         raw            0.098          0.101</code></pre>
+<p>Lower values of these metrics indicate better normalization.</p>
 </div>
 <div id="plotting" class="section level3">
 <h3>Plotting</h3>
-<p>First, density plots. Only showing density plots for unnormalized
-cells for two types of immune markers and 3 subjects.</p>
+<p>First, density plots. The code below constructs density plots of
+normalized and unnormalized CD14 values for 3 subjects.</p>
 <pre class="r"><code>set.seed(103001)
 ids = sample(unique(lung_df$patient_id), 3)
 markers = c(&quot;cd19&quot;, &quot;cd14&quot;)
@@ -867,23 +514,20 @@ mx_df %&gt;%
   facet_wrap(~marker) +
   #theme(legend.position = &quot;none&quot;) +
   xlim(0, 1) +
-  labs(x = &quot;&quot;)
-## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-## ℹ Please use `linewidth` instead.
-## This warning is displayed once every 8 hours.
-## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-## generated.
-## Warning: Removed 2261 rows containing non-finite values (`stat_density()`).
-## Removed 2261 rows containing non-finite values (`stat_density()`).</code></pre>
+  labs(x = &quot;&quot;)</code></pre>
 <p><img src="MI_normalization_files/figure-html/density_mxnorm-1.png" width="90%" /></p>
-<p>Discordance plots. Show for subset of markers and maybe subset of
-subjects.</p>
-<pre class="r"><code>set.seed(103001)
-ids = sample(unique(lung_df$patient_id), 15)
-
+<p>The next set of plots shows Otsu discordance scores. Otsu thresholds
+were calculated at the slide-level for each marker and compared to a
+global Otsu threshold for each marker to calculate a discordance
+score.</p>
+<p>Discordance scores are plotted for all 20 subjects and 6 markers,
+both before and after normalization. The white diamond represents the
+mean discordance score across all markers for a given method. Given that
+this is a discordance score, lower values indicate better agreement
+across slides.</p>
+<pre class="r"><code>
 otsu_data = mx_norm$otsu_data %&gt;%
-  filter(marker %in% c(&quot;cd14&quot;, &quot;cd19&quot;, &quot;cd8&quot;, &quot;cd3&quot;, &quot;dapi&quot;, &quot;ck&quot;),
-         slide_id %in% ids) %&gt;%
+  filter(marker %in% c(&quot;cd14&quot;, &quot;cd19&quot;, &quot;cd8&quot;, &quot;cd3&quot;, &quot;dapi&quot;, &quot;ck&quot;)) %&gt;%
   mutate(slide_id = as.numeric(factor(slide_id)),
          norm = factor(table, levels = c(&quot;raw&quot;, &quot;normalized&quot;))) 
 
@@ -901,17 +545,9 @@ otsu_data %&gt;%
   facet_wrap(~ norm) +
   geom_point(data = mean_vals, aes(m1, slide_id), color = &quot;black&quot;, fill = &quot;white&quot;, 
              shape = 23, size = point_size) +
-  labs(x = &quot;discordance score&quot;, y = &quot;slide_id&quot;)
-</code></pre>
-<pre class="r"><code>rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)
-## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
-## object &#39;mean_vals&#39; not found
-## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
-## object &#39;otsu_data&#39; not found
-## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
-## object &#39;discordance_score&#39; not found
-## Warning in rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, :
-## object &#39;point_size&#39; not found</code></pre>
+  labs(x = &quot;discordance score&quot;, y = &quot;slide_id&quot;)</code></pre>
+<p><img src="MI_normalization_files/figure-html/discordance_mxnorm-1.png" width="90%" /></p>
+<pre class="r"><code>rm(mx_data, mx_norm, mean_vals, otsu_data, discordance_score, ids, markers, point_size, mx_df)</code></pre>
 </div>
 </div>
 <div id="references" class="section level2">
@@ -974,6 +610,16 @@ package</a></li>
 <li><a
 href="https://academic.oup.com/bioinformatics/article/38/6/1700/6496920">Methods
 behind mxnorm</a></li>
+</ul>
+</div>
+<div id="analysis-of-functional-markers" class="section level3">
+<h3>Analysis of functional markers</h3>
+<ul>
+<li><a href="https://www.nature.com/articles/s41592-022-01575-3">Spatial
+differential expression</a></li>
+<li><a
+href="https://academic.oup.com/bioinformaticsadvances/article/2/1/vbac039/6590640">Density
+variation analsyis of functional markers</a></li>
 </ul>
 </div>
 </div>
