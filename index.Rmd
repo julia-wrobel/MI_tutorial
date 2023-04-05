@@ -5,19 +5,15 @@ title: "A short course on multiplex single-cell imaging in R"
 
 This page contains materials by [Julia Wrobel](http://juliawrobel.com/) for the short course titled "A workshop for analysis of multiplex single-cell imaging data in R" held at the University of Michigan Department of Biostatistics on April 6, 2023. Thanks to [Jeff Goldsmith](jeffgoldsmith.com) for providing the [website template](https://github.com/jeff-goldsmith/ICAMPAM).
 
-``
-``
-``
-``
+
+<br>
 
 ### Acknowledgements 
 
-This work wouldn't be possible without great collaborators at several institutions, including:
+I want to acknowledge the following collaborators, without whom this work wouldn't be possible:
 
-``
-``
-``
-``
+
+<br>
 
 #### University of Colorado Anschutz Medical Center
 
@@ -39,37 +35,26 @@ This work wouldn't be possible without great collaborators at several institutio
 * Christian Rickert
 * Erin Schenk
 
-
-``
-``
-``
-``
+<br>
 
 #### Vanderbilt Biostatistics Statistical Imaging Collective
 
-* Simon Vandekar
+* [Simon Vandekar](https://simonvandekar.bitbucket.io/)
 * Coleman Harris
 
 
-``
-``
-``
-``
+<br>
 
 #### Moffitt Cancer Center
 
-* Brooke Fridley
+* [Brooke Fridley](https://lab.moffitt.org/fridley/)
 * Alex Soupir
 * Jose Laborde
 
-
-``
-``
-``
-``
+<br>
 
 #### Johns Hopkins Data Science Lab
 
-* Stephanie Hicks
-* Lukas Weber
+* [Stephanie Hicks](https://www.stephaniehicks.com/)
+* [Lukas Weber](https://lmweber.org/)
 
