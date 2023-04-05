@@ -36,10 +36,11 @@ In this module I briefly discuss loading and visualizing raw TIFF data. The rest
 The following image is a single ROI from a tissue slice from a patient with non small cell lung carcinoma.Cell and tissue segmentation and cell phenotyping were performed using [inForm](https://www.akoyabio.com/phenoimager/software/inform-tissue-finder/) software. For each image, there are multiple Tiff files output by inForm:
 
 
-* `*component_data.tif`: the multichannel file we are most interested in
-* `*binary_sig*`: 3 channel file with binary segmentation maps
-* `"subject_id".tif`: A composite image in RGB format. 
+* `lung_component_data.tif`: the multichannel file we are most interested in
+* `lung_binary_seg_maps.tif`: 3 channel file with binary segmentation maps
+* `lung.tif`: A composite image in RGB format. 
 
+You can download these files from the Data tab and store them in a local directory. 
 
 ```{r}
 
@@ -52,12 +53,12 @@ library(EBImage)
 
 
 # define your specific file path
-my_path = here::here("Data")
+my_path = "./Data/"
 
 # define file for different .tif files
-component = here::here("Data", "lung_component_data.tif") 
-binseg =  here::here("Data", "lung_binary_seg_maps.tif")
-composite_tif = here::here("Data", "lung.tif")
+component = paste0(my_path, "lung_component_data.tif")
+binseg = paste0(my_path, "lung_binary_seg_maps.tif")
+composite_tif = paste0(my_path, "lung.tif")
 ```
 
 

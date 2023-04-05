@@ -395,12 +395,14 @@ href="https://www.akoyabio.com/phenoimager/software/inform-tissue-finder/">inFor
 software. For each image, there are multiple Tiff files output by
 inForm:</p>
 <ul>
-<li><code>*component_data.tif</code>: the multichannel file we are most
-interested in</li>
-<li><code>*binary_sig*</code>: 3 channel file with binary segmentation
-maps</li>
-<li><code>"subject_id".tif</code>: A composite image in RGB format.</li>
+<li><code>lung_component_data.tif</code>: the multichannel file we are
+most interested in</li>
+<li><code>lung_binary_seg_maps.tif</code>: 3 channel file with binary
+segmentation maps</li>
+<li><code>lung.tif</code>: A composite image in RGB format.</li>
 </ul>
+<p>You can download these files from the Data tab and store them in a
+local directory.</p>
 <pre class="r"><code>
 #BiocManager::install(&quot;EBImage&quot;)
 
@@ -411,15 +413,12 @@ library(EBImage)
 
 
 # define your specific file path
-my_path = here::here(&quot;Data&quot;)
+my_path = &quot;./Data/&quot;
 
 # define file for different .tif files
-component = here::here(&quot;Data&quot;, &quot;lung_component_data.tif&quot;) 
-binseg =  here::here(&quot;Data&quot;, &quot;lung_binary_seg_maps.tif&quot;)
-composite_tif = here::here(&quot;Data&quot;, &quot;lung.tif&quot;)</code></pre>
-<p>The subject and image ID are embedded in the file name. For example,
-for the file “#12 2-690-981 P44_[48428,17215].tif”, “12 2-690-981” is
-the subject id, and “48428,17215” is the image ID.</p>
+component = paste0(my_path, &quot;lung_component_data.tif&quot;)
+binseg = paste0(my_path, &quot;lung_binary_seg_maps.tif&quot;)
+composite_tif = paste0(my_path, &quot;lung.tif&quot;)</code></pre>
 <div id="component-file" class="section level4">
 <h4>Component file</h4>
 <p>The <code>component.tif</code> file contains the multichannel tiff,
