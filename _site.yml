@@ -23,7 +23,7 @@ navbar:
     - text: "About"
       href: about.html
     - icon: fa-github fa-lg
-      href: http://juliawrobel.com/MI_tutorial/
+      href: https://github.com/julia-wrobel/MI_tutorial
 output:
   html_document:
     theme: flatly

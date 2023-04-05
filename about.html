@@ -280,7 +280,7 @@ $(document).ready(function () {
   <a href="about.html">About</a>
 </li>
 <li>
-  <a href="http://juliawrobel.com/MI_tutorial/">
+  <a href="https://github.com/julia-wrobel/MI_tutorial">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -309,8 +309,12 @@ listed below. Code to install the packages follows, and version
 information about each of these packages and their dependencies is at
 the bottom of this page.</p>
 <p>Installing packages from CRAN</p>
-<pre class="r"><code>install.packages(c(&quot;tidyverse&quot;, &quot;spatstat&quot;, &quot;spatialTIME&quot;, &quot;mxnorm&quot;,&quot;refund&quot;,
-                   &quot;refund.shiny&quot;))</code></pre>
+<pre class="r"><code># main packages
+install.packages(c(&quot;tidyverse&quot;, &quot;spatstat&quot;, &quot;spatialTIME&quot;, &quot;mxnorm&quot;,&quot;refund&quot;,
+                   &quot;refund.shiny&quot;, &quot;tiff&quot;, &quot;survival&quot;))
+
+# additional packages used for visualization
+install.packages(c(&quot;viridis&quot;, &quot;patchwork&quot;))</code></pre>
 <p>Installing packages from Bioconductor</p>
 <pre class="r"><code># install Bioconductor
 BiocManager::install(version = &quot;3.16&quot;)

@@ -3,7 +3,7 @@ title: "A short course on multiplex single-cell imaging in R"
 ---
 
 
-This page contains materials by [Julia Wrobel](http://juliawrobel.com/) for the short course titled "A workshop for analysis of multiplex single-cell imaging data in R" held at the University of Michigan Department of Biostatistics on April 6, 2023.
+This page contains materials by [Julia Wrobel](http://juliawrobel.com/) for the short course titled "A workshop for analysis of multiplex single-cell imaging data in R" held at the University of Michigan Department of Biostatistics on April 6, 2023. Thanks to [Jeff Goldsmith](jeffgoldsmith.com) for providing the [website template](https://github.com/jeff-goldsmith/ICAMPAM).
 
 ``
 ``
@@ -72,3 +72,4 @@ This work wouldn't be possible without great collaborators at several institutio
 
 * Stephanie Hicks
 * Lukas Weber
+

@@ -9,8 +9,12 @@ In the short course, we'll actively use several packages which are listed below.
 Installing packages from CRAN
 
 ```{r, eval=FALSE}
+# main packages
 install.packages(c("tidyverse", "spatstat", "spatialTIME", "mxnorm","refund",
-                   "refund.shiny"))
+                   "refund.shiny", "tiff", "survival"))
+
+# additional packages used for visualization
+install.packages(c("viridis", "patchwork"))
 ```
 
 Installing packages from Bioconductor

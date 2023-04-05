@@ -464,6 +464,6 @@ summary(phmod_fpca)
 
 
 * [interactive visualization of functional data with refund.shiny](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4864857/)
-* [a paper using a cox model with FPC scores for multiplex imaging data](https://www.biorxiv.org/content/10.1101/2022.06.17.496475v1.full.pdf)
+* [a paper using a Cox model with FPC scores for multiplex imaging data](https://www.biorxiv.org/content/10.1101/2022.06.17.496475v1.full.pdf)
 * [functional Cox regression with multiplex imaging data](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009486)
 * [additive functional Cox regression](https://pubmed.ncbi.nlm.nih.gov/34898969/)
