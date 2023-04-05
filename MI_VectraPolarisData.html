@@ -33,6 +33,7 @@
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-6.2.1/css/all.min.css" rel="stylesheet" />
@@ -221,6 +222,9 @@ $(document).ready(function () {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
 
 
@@ -356,7 +360,7 @@ div.tocify {
   <a href="about.html">About</a>
 </li>
 <li>
-  <a href="http://juliawrobel.com/MI_tutorial/">
+  <a href="https://github.com/julia-wrobel/MI_tutorial">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -367,6 +371,14 @@ div.tocify {
 </div><!--/.navbar -->
 
 <div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
 
 
 
@@ -400,8 +412,8 @@ library(tidyverse)</code></pre>
 <div id="install-and-load-data" class="section level2">
 <h2>Install and load data</h2>
 <p>The data is publicly available on Bioconductor as the package
-<code>VectraPolarisData</code>. You can install the
-<code>VectraPolarisData</code> from Bioconductor here:</p>
+<code>VectraPolarisData</code>. You can install the package from
+Bioconductor here:</p>
 <pre class="r"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE)) {
      install.packages(&quot;BiocManager&quot;)
 }
@@ -439,11 +451,16 @@ each cell</p>
 <li><code>intensities</code>: mean marker intensity for entire cell</li>
 <li><code>nucleus_intensities</code>: mean marker intensity in the
 nucleus</li>
-<li><code>membraine_intensities</code>: mean marker intensity in the
-cell membrane</li>
+<li><code>membrane_intensities</code>: mean marker intensity in the cell
+membrane</li>
 </ul>
 <pre class="r"><code>assayNames(oc)
 ## [1] &quot;intensities&quot;          &quot;nucleus_intensities&quot;  &quot;membrane_intensities&quot;</code></pre>
+<p>Row names provide the names of the markers.</p>
+<pre class="r"><code>rownames(oc)
+##  [1] &quot;ck_opal_780&quot;      &quot;ki67_opal_690&quot;    &quot;cd8_opal_650&quot;     &quot;ier3_opal_620&quot;   
+##  [5] &quot;p_stat3_opal_570&quot; &quot;cd3_opal_540&quot;     &quot;cd68_opal_520&quot;    &quot;cd19_opal_480&quot;   
+##  [9] &quot;dapi&quot;             &quot;autofluorescence&quot;</code></pre>
 <p>The colData slot contains cell-level covariates like cell phenotype,
 cell area, and, min, max, and standard deviation of intensity values for
 each marker.</p>
@@ -468,10 +485,11 @@ sample(names(colData(oc)), 15)
 <h3>Converting to dataframe</h3>
 <p>Storing the data as a <code>SpatialExperiment</code> allows for
 analysis using tools that are built into the
-<code>SpatialExperiment</code> workflow. However, I often find it useful
-to work with the data as a <code>data.frame</code> object instead.</p>
+<code>SpatialExperiment</code> workflow. However, it is often useful to
+work with the data as a <code>data.frame</code> object instead.</p>
 <p>Code below converts the ovarian cancer dataset from a
-<code>SpatialExperiment</code> object to a <code>data.frame</code>.</p>
+<code>SpatialExperiment</code> object to a <code>data.frame</code>. We
+perform some data cleaning steps as well.</p>
 <pre class="r"><code>
 ## Assays slots
 assays_slot &lt;- assays(oc)
@@ -524,6 +542,9 @@ ovarian_df &lt;- full_join(patient_level_ovarian, cell_level_ovarian, by = &quot
   select(-tma, -diagnosis, -grade)
 
 rm(oc, assays_slot, intensities_df, nucleus_intensities_df, membrane_intensities_df, colData_df, spatialCoords_df, patient_level_ovarian, cell_level_ovarian)</code></pre>
+<p>The resulting dataframe, <code>ovarian_df</code>, contains
+information on marker intensities, cell X and Y position, cell
+phenotypes, and patient-level characteristics.</p>
 </div>
 <div id="exploratory-analysis" class="section level3">
 <h3>Exploratory analysis</h3>
@@ -532,30 +553,34 @@ rm(oc, assays_slot, intensities_df, nucleus_intensities_df, membrane_intensities
 head(ovarian_df)
 
 glimpse(ovarian_df)</code></pre>
-<p>Plotting the cells for a single subject</p>
+<p>Below we plot the cells for a single subject. In this dataset there
+is one image for each subject, and the image comes from a tumor
+microarray (TMA).</p>
 <pre class="r"><code>id = sample(ovarian_df$sample_id, 1)
 
 ovarian_df %&gt;%
   filter(sample_id == id) %&gt;%
   ggplot(aes(x, y)) +
   geom_point(aes(color = tissue_category), size = 0.1)</code></pre>
-<p><img src="MI_VectraPolarisData_files/figure-html/unnamed-chunk-11-1.png" width="90%" /></p>
-<p>For multiple subjects. Each slides has multiple tissue slices from a
-tumor microarray, and x and y locations correspond to position on the
-slide of a given sample. There is only one sample per subject in this
-dataset.</p>
+<p><img src="MI_VectraPolarisData_files/figure-html/unnamed-chunk-12-1.png" width="90%" /></p>
+<p>Now we plot the images (below) for multiple subjects. In this
+dataset, multiple TMA cores (each TMA core is frome a different subject)
+were placed on the same slide, and then that slide was imaged. X and Y
+locations in this data correspond to position on the slide for a given
+patient sample.</p>
 <pre class="r"><code>ovarian_df %&gt;%
   filter(sample_id &lt; 10) %&gt;%
   ggplot(aes(x, y)) +
   geom_point(aes(color = tissue_category), size = 0.1)</code></pre>
-<p><img src="MI_VectraPolarisData_files/figure-html/unnamed-chunk-12-1.png" width="90%" /></p>
+<p><img src="MI_VectraPolarisData_files/figure-html/unnamed-chunk-13-1.png" width="90%" /></p>
 </div>
 </div>
 <div id="lung-data" class="section level2">
 <h2>Lung data</h2>
 <p>Load the non small cell lung carcinoma data and inspect the
 <code>SpatialExperiment</code> object. This dataset has 3-4 images per
-patient, representing different ROIs from a tissue slice.</p>
+patient, representing different ROIs from a tissue slice. In this
+dataset, each patient was imaged on a separate slide.</p>
 <pre class="r"><code># load lung data
 lung &lt;- HumanLungCancerV3()
 ## see ?VectraPolarisData and browseVignettes(&#39;VectraPolarisData&#39;) for documentation
@@ -621,13 +646,15 @@ lung_df &lt;- full_join(patient_level_lung, cell_level_lung, by = &quot;slide_id
 
 rm(lung, assays_slot, intensities_df, nucleus_intensities_df, membrane_intensities_df, colData_df, spatialCoords_df, patient_level_lung,
    cell_level_lung)</code></pre>
+<p>The resulting dataframe, <code>lung_df</code>, contains information
+on marker intensities, cell X and Y position, cell phenotypes, and
+patient-level characteristics.</p>
 </div>
 <div id="exploratory-analysis-1" class="section level3">
 <h3>Exploratory analysis</h3>
-<p>Images from a single subject. This data is not from a TMA. Each image
-represents an ROI from a tissue slice. There are multiple ROIs for each
-subject, and each of the images below represents a different ROI for the
-same subject.</p>
+<p>Below shows images from a single subject. Each image represents a
+different ROI from the same tissue slice from a single subject. There
+are 3-6 ROIs for each subject.</p>
 <pre class="r"><code>id = sample(lung_df$patient_id, 1)
 
 lung_df %&gt;%
@@ -635,22 +662,23 @@ lung_df %&gt;%
   ggplot(aes(x, y)) +
   geom_point(aes(color = tissue_category), size = 0.1) +
   facet_wrap(~image_id)</code></pre>
-<p><img src="MI_VectraPolarisData_files/figure-html/unnamed-chunk-15-1.png" width="90%" /></p>
+<p><img src="MI_VectraPolarisData_files/figure-html/unnamed-chunk-16-1.png" width="90%" /></p>
 </div>
 </div>
 <div id="data-saving" class="section level2">
 <h2>Data saving</h2>
 <p>Processed data are saved as <code>.rda</code> objects and can also be
-downloaded directly from the short course website.</p>
+downloaded directly from the short course website. For the rest of the
+workshop we will be working with this processed data.</p>
 <pre class="r"><code># save data sets
-save(ovarian_df, file = here::here(&quot;DataCode&quot;, &quot;ovarian.RDA&quot;))
-save(lung_df, file = here::here(&quot;DataCode&quot;, &quot;lung.RDA&quot;))
+save(ovarian_df, file = here::here(&quot;Data&quot;, &quot;ovarian.RDA&quot;))
+save(lung_df, file = here::here(&quot;Data&quot;, &quot;lung.RDA&quot;))
 
 # load processed ovarian data
-load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA&quot;))
+load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/ovarian.RDA&quot;))
 
 # load processed lung data
-load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/lung.RDA&quot;))</code></pre>
+load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/lung.RDA&quot;))</code></pre>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>
@@ -713,6 +741,11 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 <script>
 $(document).ready(function ()  {

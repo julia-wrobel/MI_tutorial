@@ -2,6 +2,7 @@
 title: "VectraPolarisData: experiment-scale multiplex imaging data"
 output:
   html_document: 
+    code_folding: hide
     toc: true
     toc_float: true
 --- 
@@ -41,7 +42,7 @@ library(tidyverse)
 
 ## Install and load data
 
-The data is publicly available on Bioconductor as the package `VectraPolarisData`. You can install the `VectraPolarisData` from Bioconductor here:
+The data is publicly available on Bioconductor as the package `VectraPolarisData`. You can install the package from Bioconductor here:
 
 ```{r, eval = FALSE, echo = TRUE, message = FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
@@ -81,11 +82,21 @@ The object stores the following marker values for each marker and each cell
 assayNames(oc)
 ```
 
+
+Row names provide the names of the markers.
+
+```{r}
+rownames(oc)
+```
+
+
 The colData slot contains cell-level covariates like cell phenotype, cell area, and, min, max, and standard deviation of intensity values for each marker.  
 
 ```{r}
 dim(colData(oc))
+
 ```
+
 
 Many of the variables are summary statistics of marker intensity values. More information on the different variables in this and the lung cancer dataset can be found in the [package vignette](https://bioconductor.org/packages/release/data/experiment/vignettes/VectraPolarisData/inst/doc/VectraPolarisData.html).
 
@@ -97,9 +108,9 @@ sample(names(colData(oc)), 15)
 
 ### Converting to dataframe 
 
-Storing the data as a `SpatialExperiment` allows for analysis using tools that are built into the `SpatialExperiment` workflow.  However, I often find it useful to work with the data as a `data.frame` object instead.
+Storing the data as a `SpatialExperiment` allows for analysis using tools that are built into the `SpatialExperiment` workflow.  However, it is often useful to work with the data as a `data.frame` object instead.
 
-Code below converts the ovarian cancer dataset from a `SpatialExperiment` object to a `data.frame`.
+Code below converts the ovarian cancer dataset from a `SpatialExperiment` object to a `data.frame`. We perform some data cleaning steps as well.
 
 ```{r}
 
@@ -156,6 +167,8 @@ ovarian_df <- full_join(patient_level_ovarian, cell_level_ovarian, by = "sample_
 rm(oc, assays_slot, intensities_df, nucleus_intensities_df, membrane_intensities_df, colData_df, spatialCoords_df, patient_level_ovarian, cell_level_ovarian)
 ```
 
+The resulting dataframe, `ovarian_df`, contains information on marker intensities, cell X and Y position, cell phenotypes, and patient-level characteristics.
+
 ### Exploratory analysis
 
 
@@ -168,7 +181,7 @@ glimpse(ovarian_df)
 ```
 
 
-Plotting the cells for a single subject
+Below we plot the cells for a single subject. In this dataset there is one image for each subject, and the image comes from a tumor microarray (TMA).
 
 ```{r}
 id = sample(ovarian_df$sample_id, 1)
@@ -181,7 +194,7 @@ ovarian_df %>%
 
 ```
 
-For multiple subjects. Each slides has multiple tissue slices from a tumor microarray, and x and y locations correspond to position on the slide of a given sample. There is only one sample per subject in this dataset.
+Now we plot the images (below) for multiple subjects. In this dataset, multiple TMA cores (each TMA core is frome a different subject) were placed on the same slide, and then that slide was imaged. X and Y locations in this data correspond to position on the slide for a given patient sample. 
 
 ```{r}
 ovarian_df %>%
@@ -193,7 +206,7 @@ ovarian_df %>%
 
 ## Lung data
 
-Load the non small cell lung carcinoma data and inspect the `SpatialExperiment` object. This dataset has 3-4 images per patient, representing different ROIs from a tissue slice.
+Load the non small cell lung carcinoma data and inspect the `SpatialExperiment` object. This dataset has 3-4 images per patient, representing different ROIs from a tissue slice. In this dataset, each patient was imaged on a separate slide.
 
 ```{r}
 # load lung data
@@ -251,11 +264,11 @@ rm(lung, assays_slot, intensities_df, nucleus_intensities_df, membrane_intensiti
    cell_level_lung)
 ```
 
-
+The resulting dataframe, `lung_df`, contains information on marker intensities, cell X and Y position, cell phenotypes, and patient-level characteristics.
 
 ### Exploratory analysis
 
-Images from a single subject. This data is not from a TMA. Each image represents an ROI from a tissue slice. There are multiple ROIs for each subject, and each of the images below represents a different ROI for the same subject. 
+Below shows images from a single subject. Each image represents a different ROI from the same tissue slice from a single subject. There are 3-6 ROIs for each subject. 
 
 ```{r}
 id = sample(lung_df$patient_id, 1)
@@ -271,7 +284,7 @@ lung_df %>%
 
 ## Data saving
 
-Processed data are saved as `.rda` objects and can also be downloaded directly from the short course website.
+Processed data are saved as `.rda` objects and can also be downloaded directly from the short course website. For the rest of the workshop we will be working with this processed data.
 
 
 ```{r, eval = FALSE}
