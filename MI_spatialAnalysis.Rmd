@@ -16,7 +16,8 @@ knitr::opts_chunk$set(
   fig.width = 6,
   fig.asp = .6,
   message = FALSE,
-  out.width = "90%"
+  out.width = "90%",
+  warning = FALSE
 )
 
 theme_set(theme_bw() + theme(legend.position = "bottom"))
@@ -86,7 +87,7 @@ all + cell_subset
 
 The `spatstat` package in `R` has great resources for analyzing spatial point patterns. Let's use the image above to do some exploratory analysis with spatstat.
 
-First create a spatstat`ppp` object. We will do spatial analysis on the the distribution of B-cells and macrophages, so subset to only these cell types.
+We will do spatial analysis on the distribution of B-cells and macrophages, so we subset to only these cell types, and create a `phenotype` variable that designates whether a cell is a B cell or a macrophage. Then we create a `ppp` object, which is what the `spatstat` package uses for storage and analysis of point pattern data.
 
 ```{r}
 library(spatstat)
@@ -105,6 +106,7 @@ subj_df = subj_df %>%
 w = convexhull.xy(subj_df$x,subj_df$y)
 
 # create ppp object as multitype point pattern
+# need to factor the marks variable for ppp object to be treated as a multitype point pattern
 ovarian_pp = ppp(subj_df$x,subj_df$y, window = w,
                  marks = factor(subj_df$phenotype))
 ```
@@ -113,14 +115,14 @@ ovarian_pp = ppp(subj_df$x,subj_df$y, window = w,
 ### Univariate Ripley's  K
 
 
-Calculate Ripley's K for B cells, then B-cells and Macrophages.  
+First we calculate Ripley's K for B cells.  
 
 
 ```{r}
 k_bcell =  Kest(subset(ovarian_pp, marks == "B-cell"), correction = "isotropic")
 ```
 
-You can plot this object using spatstat to visualize the estimated K ($\hat{K}^{iso}$) compared to the K under CSR ($K^{pois}$).
+We can plot this `k_bcell` object using `spatstat` to visualize the estimated K ($\hat{K}^{iso}$) compared to the K under CSR ($K^{pois}$).
 
 ```{r}
 plot(k_bcell)
@@ -136,7 +138,7 @@ plot(k_mac)
 
 It appears that there is some degree of clustering for both B-cells and macrophages in this image. Are these statistically significant?
 
-We can test this using the `envelope` function, which performs Monte Carlo simulations of the K function under CSR. Plot below shows pointwise envelope for B-cell K function. Pointwise means that these are performed separately for each value of *r*. Can only be interpreted if a specific value of *r* is chosen in advance.
+We can test this using the `envelope` function, which performs Monte Carlo simulations of the K function under CSR. Plot below shows pointwise envelope for B-cell K-function. Pointwise means that these are performed separately for each value of *r*. Can only be interpreted if a specific value of *r* is chosen in advance.
 
 ```{r}
 
@@ -155,9 +157,6 @@ Points outside the envelope indicate significant departure from CSR. Note that t
 The bivariate K function measures whether the spatial distribution of 2 cell types is independent. Deviation from the $K^{pois}$ line suggests a spatial relationship between the B-cells and macrophages in the image.
 
 ```{r}
-e_test = envelope(subset(ovarian_pp, marks == "B-cell"), 
-               Kest, correction = "isotropic")
-
 k_biv = Kcross(ovarian_pp, "B-cell", "macrophage", correction = "isotropic")
 
 plot(k_biv)
