@@ -59,7 +59,9 @@ The general workflow is:
 
 ### Ovarian immune cell clustering and patient survival
 
-I am interested in the relationship between patient survival and the clustering of immune cells within the tumor areas in the ovarian cancer dataset. For this analysis I am only interested in whether a cell is an immune cell or not, so I will collapse immune cell subtypes (B-cell, macrophage, CD8 T cell) into one "immune cell" category. I will then calculate univariate L at radius *r = 100* for  immune cells. 
+Let's say I am interested in the relationship between patient survival and the clustering of immune cells within the tumor areas in the ovarian cancer dataset. 
+
+For this analysis I will collapse immune cell subtypes (B-cell, macrophage, CD8 T cell) into one "immune cell" category. I will then calculate univariate L at radius *r = 100* for  immune cells.  It would also be reasonable to use the K or G function.
 
 
 #### Calculating the spatial summary statistics
@@ -70,11 +72,12 @@ First I define a function that can be used to extract the L-function at a partic
 ```{r}
 
 # function to extract univariate spatial summary statistics
+# replace argument func = Lest with func = Kest to get K function estimates
+# returns a data frame with estimate L values and L under CSR and different radii
 extract_univariate = function(data, x = "x", y = "y",
                       subject_id = "sample_id",
                       marksvar,
                       mark1 = "immune",
-                      mark2 = NULL,
                       r_vec = seq(0, 300, by = 10),
                       func = Lest){
   # create a convex hull as the observation window
@@ -88,7 +91,6 @@ extract_univariate = function(data, x = "x", y = "y",
                     r = r_vec,
                     correction = c("iso")
   )
-
   
   df = as_tibble(L_spatstat) %>%
     select(r, L = iso, csr = theo) %>%
@@ -102,7 +104,7 @@ extract_univariate = function(data, x = "x", y = "y",
 ```
 
 
-Then I organize the data and apply this function
+Then I organize the data and apply this function to all images in the dataset.
 
 ```{r}
 df_nest = ovarian_df %>%
@@ -119,7 +121,7 @@ L_df = map_dfr(df_nest$data, extract_univariate,
 L_df
 ```
 
-We want to use the `Ldiff` variable, which is the difference between the observed L and the theoretical L under CSR, in our model. This value will be positive if cells are clustered in an image, negative if cells show spatial regularity, and close to zer if cells exhibit CSR.  We will select the `Ldiff` value at *r = 100*. I visualize this variable below.
+We want to use the `Ldiff` variable, which is the difference between the observed L and the theoretical L under CSR, in our model. This value will be positive if cells are clustered in an image, negative if cells show spatial regularity, and close to zer0 if cells exhibit CSR.  We will select the `Ldiff` value at *r = 100*. I visualize this variable below.
 
 ```{r}
 L_df = L_df %>%
@@ -177,7 +179,7 @@ survival_df %>%
 ```
 
 
-Last we run a proportional hazards model to model this different. We will run this model using functions from the `survival` package. I log transform the L variable to make it appear more linear. There are also two rather extreme outliers. I would recommend looking at the images from these outliers and potentially removing these subjects.
+Last we run a proportional hazards model to model this different. We will run this model using functions from the `survival` package. 
 
 ```{r}
 phmod = coxph(Surv(survival_time, death) ~ Ldiff + age, 
@@ -198,7 +200,6 @@ Some caveats about this analysis:
 Here I am interested in the relationship between patient survival and the co-occurence of B cells and macrophages in the ovarian cancer dataset. I will use bivariate L at radius *r = 100* to assess the spatial relationship between B-cells and macrophages. 
 
 #### Calculating the spatial summary statistics
-
 
 First I define a function that can be used to extract the bivariate L-function at a particular radius or set of radii.
 

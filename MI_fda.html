@@ -356,7 +356,7 @@ div.tocify {
   <a href="about.html">About</a>
 </li>
 <li>
-  <a href="http://juliawrobel.com/MI_tutorial/">
+  <a href="https://github.com/julia-wrobel/MI_tutorial">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -397,7 +397,7 @@ library(refund)
 library(refund.shiny)
 
 # load processed ovarian cancer data from GitHub
-load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/DataCode/ovarian.RDA&quot;))</code></pre>
+load(url(&quot;https://github.com/julia-wrobel/MI_tutorial/raw/main/Data/ovarian.RDA&quot;))</code></pre>
 </div>
 <div id="regression-with-patient-level-outcomes" class="section level2">
 <h2>Regression with patient level outcomes</h2>
@@ -418,12 +418,13 @@ covariate. Include other potential confounders.</li>
 <div id="ovarian-immune-cell-clustering-and-patient-survival"
 class="section level3">
 <h3>Ovarian immune cell clustering and patient survival</h3>
-<p>I am interested in the relationship between patient survival and the
-clustering of immune cells within the tumor areas in the ovarian cancer
-dataset. For this analysis I am only interested in whether a cell is an
-immune cell or not, so I will collapse immune cell subtypes (B-cell,
+<p>Let’s say I am interested in the relationship between patient
+survival and the clustering of immune cells within the tumor areas in
+the ovarian cancer dataset.</p>
+<p>For this analysis I will collapse immune cell subtypes (B-cell,
 macrophage, CD8 T cell) into one “immune cell” category. I will then
-calculate univariate L at radius <em>r = 100</em> for immune cells.</p>
+calculate univariate L at radius <em>r = 100</em> for immune cells. It
+would also be reasonable to use the K or G function.</p>
 <div id="calculating-the-spatial-summary-statistics"
 class="section level4">
 <h4>Calculating the spatial summary statistics</h4>
@@ -431,11 +432,12 @@ class="section level4">
 at a particular radius or set of radii.</p>
 <pre class="r"><code>
 # function to extract univariate spatial summary statistics
+# replace argument func = Lest with func = Kest to get K function estimates
+# returns a data frame with estimate L values and L under CSR and different radii
 extract_univariate = function(data, x = &quot;x&quot;, y = &quot;y&quot;,
                       subject_id = &quot;sample_id&quot;,
                       marksvar,
                       mark1 = &quot;immune&quot;,
-                      mark2 = NULL,
                       r_vec = seq(0, 300, by = 10),
                       func = Lest){
   # create a convex hull as the observation window
@@ -449,7 +451,6 @@ extract_univariate = function(data, x = &quot;x&quot;, y = &quot;y&quot;,
                     r = r_vec,
                     correction = c(&quot;iso&quot;)
   )
-
   
   df = as_tibble(L_spatstat) %&gt;%
     select(r, L = iso, csr = theo) %&gt;%
@@ -460,7 +461,8 @@ extract_univariate = function(data, x = &quot;x&quot;, y = &quot;y&quot;,
   df
 
 }</code></pre>
-<p>Then I organize the data and apply this function</p>
+<p>Then I organize the data and apply this function to all images in the
+dataset.</p>
 <pre class="r"><code>df_nest = ovarian_df %&gt;%
   # subset to tumor areas
   filter(tissue_category == &quot;Tumor&quot;) %&gt;%
@@ -494,7 +496,7 @@ L_df
 <p>We want to use the <code>Ldiff</code> variable, which is the
 difference between the observed L and the theoretical L under CSR, in
 our model. This value will be positive if cells are clustered in an
-image, negative if cells show spatial regularity, and close to zer if
+image, negative if cells show spatial regularity, and close to zer0 if
 cells exhibit CSR. We will select the <code>Ldiff</code> value at <em>r
 = 100</em>. I visualize this variable below.</p>
 <pre class="r"><code>L_df = L_df %&gt;%
@@ -545,10 +547,7 @@ less extreme immune clustering) have longer survival times.</p>
 <p><img src="MI_fda_files/figure-html/unnamed-chunk-8-1.png" width="90%" /></p>
 <p>Last we run a proportional hazards model to model this different. We
 will run this model using functions from the <code>survival</code>
-package. I log transform the L variable to make it appear more linear.
-There are also two rather extreme outliers. I would recommend looking at
-the images from these outliers and potentially removing these
-subjects.</p>
+package.</p>
 <pre class="r"><code>phmod = coxph(Surv(survival_time, death) ~ Ldiff + age, 
               data = survival_df)
 summary(phmod)
@@ -920,7 +919,7 @@ href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4864857/">interactive
 visualization of functional data with refund.shiny</a></li>
 <li><a
 href="https://www.biorxiv.org/content/10.1101/2022.06.17.496475v1.full.pdf">a
-paper using a cox model with FPC scores for multiplex imaging
+paper using a Cox model with FPC scores for multiplex imaging
 data</a></li>
 <li><a
 href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009486">functional
