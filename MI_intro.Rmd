@@ -124,7 +124,7 @@ names(segmentations)
 Nucleus segmentation
 
 ```{r}
-nucleus = segmentations[['Nucleus']]
+nucleus = segmentations[['Membrane']]
 plot(as.raster(nucleus, max = max(nucleus)))
 ```
 

@@ -87,12 +87,7 @@ mx_data = mx_dataset(data = lung_df,
                                      "ck",
                                      "dapi"
                                      ),
-                     metadata_cols = c("tissue_category", 
-                                       "phenotype_ck", 
-                                       "phenotype_cd8", 
-                                       "phenotype_cd14",
-                                       "phenotype_other", 
-                                       "phenotype_cd19"))
+                     metadata_cols = c("tissue_category"))
 
 
 class(mx_data)

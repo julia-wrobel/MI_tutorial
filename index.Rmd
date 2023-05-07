@@ -53,6 +53,12 @@ I want to acknowledge the following collaborators, without whom this work wouldn
 
 <br>
 
+#### Thomas Jefferson University
+
+* Inna Chervoneva
+
+<br>
+
 #### Johns Hopkins Data Science Lab
 
 * [Stephanie Hicks](https://www.stephaniehicks.com/)

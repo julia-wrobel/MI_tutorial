@@ -80,7 +80,7 @@ cell_subset = subj_df %>%
              color = "purple", size = .5, shape = 6) +
   theme(legend.position ="bottom")
 
-all + cell_subset
+all / (cell_subset + all)
 ```
 
 ## Analysis using spatstat package
@@ -143,7 +143,7 @@ We can test this using the `envelope` function, which performs Monte Carlo simul
 ```{r}
 
 e_test = envelope(subset(ovarian_pp, marks == "B-cell"), 
-               Kest, correction = "isotropic")
+               Kest, correction = "isotropic", global = TRUE)
 
 plot(e_test)
 
@@ -179,6 +179,13 @@ Its bivariate counterpart
 G_biv = Gcross(ovarian_pp, correction = "rs")
 
 plot(G_biv)
+
+
+e_test = envelope(ovarian_pp, 
+               Gcross,  global = TRUE)
+
+plot(e_test)
+
 ```
 
 ## SpatialTIME package
@@ -207,6 +214,7 @@ spatial_ls = filter(ovarian_df, sample_id %in% ids) %>%
 
 # define clinical data
 clinical_data = ovarian_df %>%
+  #filter(ovarian_df, sample_id %in% ids) %>%
   dplyr::select(sample_id, survival_time, death, stage_bin, BRCA_mutation) %>%
   distinct() %>%
   mutate(id = sample_id)
@@ -255,8 +263,8 @@ df_spatialTIME <- ripleys_k(mif = df_spatialTIME,
                             method = "K",
                             r_range = seq(0, 300, 10),
                             edge_correction = 'translation'
-                            #permute = TRUE,
-                            #num_permutations = 100
+                            permute = TRUE,
+                            num_permutations = 100
                             )
 
 ```

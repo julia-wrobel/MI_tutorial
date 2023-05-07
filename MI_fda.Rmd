@@ -234,8 +234,22 @@ Then I organize the data to apply this function. However, some subjects do not h
 
 
 ```{r}
-df_bivariate = ovarian_df %>%
+ovarian_df %>%
+  # subset to tumor areas
   filter(tissue_category == "Tumor") %>%
+  # define B cell or macrophage variable
+  mutate(id = sample_id,
+         phenotype = case_when(phenotype_cd19 == "CD19+" ~ "B-cell",
+                               phenotype_cd68 == "CD68+" ~ "macrophage",
+                               TRUE ~ "other"),
+         phenotype = factor(phenotype)) %>%
+  filter(phenotype != "other") %>%
+  group_by(phenotype, sample_id) %>%
+  summarize(n()) %>%
+  ungroup() %>% summarize(median(n()))
+
+
+df_bivariate = ovarian_df %>%
   # subset to tumor areas
   filter(tissue_category == "Tumor") %>%
   # define B cell or macrophage variable
@@ -395,8 +409,7 @@ Lmat = L_fda_df %>%
   dplyr::select(-subject_id) %>%
   as.matrix()
 
-# run fpca
-set.seed(133)
+# run fpca#
 L_fpc = fpca.sc(Y = Lmat, pve = .99)
 
 # if you have a large dataset, instead use fpca.face:
